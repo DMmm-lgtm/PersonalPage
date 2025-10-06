@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useMemo } from 'react'
 import { useTheme } from '../contexts/ThemeContext'
 
 // 图片占位数据类型定义
@@ -9,7 +9,7 @@ interface ImagePlaceholder {
   aspectRatio: string
 }
 
-// 9个图片占位数据 - 统一的3x3网格布局
+// 9个图片占位数据
 const imagePlaceholders: ImagePlaceholder[] = [
   { id: 1, width: 'w-full', height: 'h-48', aspectRatio: 'aspect-square' },
   { id: 2, width: 'w-full', height: 'h-48', aspectRatio: 'aspect-square' },
@@ -22,82 +22,121 @@ const imagePlaceholders: ImagePlaceholder[] = [
   { id: 9, width: 'w-full', height: 'h-48', aspectRatio: 'aspect-square' }
 ]
 
-// 单个图片占位组件
-const ImagePlaceholder: React.FC<{ placeholder: ImagePlaceholder }> = ({ placeholder }) => {
+// 单个图片占位组件 - 叠放文件夹版本
+const ImagePlaceholder: React.FC<{ 
+  placeholder: ImagePlaceholder
+  stackIndex: number // 在栈中的位置（0为最顶层）
+  isTop: boolean // 是否为最顶层
+  onClick: (id: number) => void
+}> = ({ placeholder, stackIndex, isTop, onClick }) => {
   const { theme } = useTheme()
-  const [isHovered, setIsHovered] = React.useState(false)
+  const [isHovered, setIsHovered] = useState(false)
+
+  // 计算每个图片的偏移量（从右下角往左上角堆叠）
+  const offsetX = -stackIndex * 0.035 // 每个图片向左偏移2%
+  const offsetY = -stackIndex * 0.04 // 每个图片向上偏移2%
+  
+  // 计算z-index（最顶层最高）
+  const zIndex = 100 - stackIndex
 
   return (
     <div
-      className={`${placeholder.width} ${placeholder.height} ${placeholder.aspectRatio} relative overflow-hidden rounded-lg cursor-pointer transition-all duration-500 ease-out`}
+      className="absolute overflow-hidden rounded-lg cursor-pointer"
       style={{
-        backgroundColor: theme === 'dark' 
-          ? 'rgba(255, 255, 255, 0.05)' 
-          : 'rgba(0, 0, 0, 0.05)',
-        border: `1px solid ${theme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'}`,
-        minHeight: '120px', // 确保最小高度
-        transform: isHovered ? 'scale(1.2)' : 'scale(1)',
-        zIndex: isHovered ? 50 : 'auto',
-        boxShadow: isHovered 
-          ? theme === 'dark'
-            ? '0 20px 40px rgba(0, 0, 0, 0.6), 0 10px 20px rgba(0, 0, 0, 0.4)'
-            : '0 20px 40px rgba(0, 0, 0, 0.3), 0 10px 20px rgba(0, 0, 0, 0.2)'
-          : 'none',
-        willChange: 'transform, box-shadow, z-index',
+        // 每张图片本身占屏幕的2/3大小
+        width: '66.67vw',
+        height: '66.67vh',
+        maxWidth: '800px',
+        maxHeight: '600px',
+        minWidth: '400px',
+        minHeight: '300px',
+        // 相对于视口偏右下角定位，然后应用叠放偏移
+        left: '57%', // 从中心向右偏移15%
+        top: '57%', // 从中心向下偏移15%
+        transform: `translate(calc(-50% + ${offsetX * 100}%), calc(-50% + ${offsetY * 100}%))`,
+        // z-index层级
+        zIndex,
+        // 过渡动画
+        transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        // 性能优化
+        willChange: 'transform',
         backfaceVisibility: 'hidden'
       }}
+      onClick={() => onClick(placeholder.id)}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* 图片占位内容 */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="text-center transition-all duration-500">
-          <div 
-            className="text-2xl mb-2 transition-all duration-500"
-            style={{
-              opacity: isHovered ? 0.9 : 0.6,
-              transform: isHovered ? 'scale(1.1)' : 'scale(1)'
-            }}
-          >
-            📷
-          </div>
-          <div 
-            className="text-xs font-mono transition-all duration-500"
-            style={{
-              color: theme === 'dark' ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.4)',
-              opacity: isHovered ? 0.8 : 0.4,
-              transform: isHovered ? 'scale(1.05)' : 'scale(1)'
-            }}
-          >
-            {placeholder.id}
-          </div>
-        </div>
-      </div>
-      
-      {/* 悬停时的覆盖层和提示文字 */}
-      <div 
-        className="absolute inset-0 transition-all duration-500 flex items-center justify-center"
+      {/* 图片容器 */}
+      <div
+        className="w-full h-full relative"
         style={{
-          backgroundColor: isHovered 
-            ? (theme === 'dark' ? 'rgba(0, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.2)')
-            : 'rgba(0, 0, 0, 0)'
+          backgroundColor: theme === 'dark' 
+            ? 'rgba(255, 255, 255, 0.08)' 
+            : 'rgba(0, 0, 0, 0.08)',
+          border: `1px solid ${theme === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)'}`,
+          // 悬停时的阴影效果
+          boxShadow: isHovered 
+            ? (theme === 'dark'
+                ? '0 8px 32px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.3)'
+                : '0 8px 32px rgba(0, 0, 0, 0.2), 0 4px 16px rgba(0, 0, 0, 0.1)')
+            : (stackIndex === 0 
+                ? '0 4px 16px rgba(0, 0, 0, 0.1)' 
+                : 'none'),
+          // 悬停时轻微放大
+          transform: isHovered ? 'scale(1.02)' : 'scale(1)',
+          transition: 'box-shadow 0.3s ease, transform 0.3s ease'
         }}
       >
+        {/* 图片占位内容 */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="text-center">
+            <div 
+              className="text-3xl mb-3 transition-all duration-300"
+              style={{
+                opacity: isTop ? 0.9 : 0.6,
+                transform: isHovered ? 'scale(1.1)' : 'scale(1)'
+              }}
+            >
+              📷
+            </div>
+            <div 
+              className="text-sm font-mono font-medium transition-all duration-300"
+              style={{
+                color: theme === 'dark' ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)',
+                opacity: isTop ? 0.9 : 0.5
+              }}
+            >
+              图片 {placeholder.id}
+            </div>
+          </div>
+        </div>
+        
+        {/* 悬停时的覆盖层 */}
         <div 
-          className="transition-all duration-500"
-          style={{ 
-            opacity: isHovered ? 1 : 0,
-            transform: isHovered ? 'translateY(0)' : 'translateY(10px)'
+          className="absolute inset-0 transition-all duration-300 flex items-center justify-center"
+          style={{
+            backgroundColor: isHovered 
+              ? (theme === 'dark' ? 'rgba(0, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)')
+              : 'rgba(0, 0, 0, 0)'
           }}
         >
           <div 
-            className="text-sm font-medium text-center"
-            style={{
-              color: theme === 'dark' ? 'white' : 'white',
-              textShadow: '0 2px 4px rgba(0, 0, 0, 0.5)'
+            className="transition-all duration-300"
+            style={{ 
+              opacity: isHovered ? 1 : 0,
+              transform: isHovered ? 'translateY(0)' : 'translateY(10px)'
             }}
           >
-            点击查看
+            <div 
+              className="text-sm font-medium text-center px-3 py-1 rounded"
+              style={{
+                color: theme === 'dark' ? '#00FFFF' : '#0066CC',
+                backgroundColor: theme === 'dark' ? 'rgba(0, 255, 255, 0.1)' : 'rgba(0, 102, 204, 0.1)',
+                border: `1px solid ${theme === 'dark' ? 'rgba(0, 255, 255, 0.3)' : 'rgba(0, 102, 204, 0.3)'}`
+              }}
+            >
+              点击查看
+            </div>
           </div>
         </div>
       </div>
@@ -106,27 +145,79 @@ const ImagePlaceholder: React.FC<{ placeholder: ImagePlaceholder }> = ({ placeho
 }
 
 const LeftGallery: React.FC = () => {
+  // 图片栈顺序状态管理（初始时1号图片在最顶层，9号图片在最底层）
+  const [imageStack, setImageStack] = useState<number[]>([1, 2, 3, 4, 5, 6, 7, 8, 9])
+  
+  // 处理图片点击事件
+  const handleImageClick = (clickedId: number) => {
+    setImageStack(prevStack => {
+      // 找到被点击图片的当前位置
+      const clickedIndex = prevStack.indexOf(clickedId)
+      
+      if (clickedIndex === -1) return prevStack // 如果找不到，返回原数组
+      
+      // 计算动画时长：每张图片插入底部需要0.2秒
+      const animationDuration = (prevStack.length - 1 - clickedIndex) * 0.2
+      
+      // 创建新的栈顺序：被点击的图片移到最顶层（右下角位置），其他图片按原顺序排列
+      const newStack = [
+        clickedId, // 被点击的图片移到最顶层
+        ...prevStack.filter(id => id !== clickedId) // 其他图片保持原顺序
+      ]
+      
+      console.log(`点击了图片 ${clickedId}，从位置 ${clickedIndex} 移到顶层，动画时长 ${animationDuration}s`)
+      
+      return newStack
+    })
+  }
+
+  // 使用useMemo缓存图片组件，避免不必要的重新渲染
+  const imageComponents = useMemo(() => {
+    return imageStack.map((imageId, stackIndex) => {
+      const placeholder = imagePlaceholders.find(p => p.id === imageId)
+      if (!placeholder) return null
+      
+      return (
+        <ImagePlaceholder
+          key={`${imageId}-${stackIndex}`} // 使用id和位置作为key
+          placeholder={placeholder}
+          stackIndex={stackIndex}
+          isTop={stackIndex === 0}
+          onClick={handleImageClick}
+        />
+      )
+    })
+  }, [imageStack])
+
   return (
     <div style={{ 
       width: '100vw', 
       height: '100vh',
+      position: 'relative',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       flexShrink: 0,
       padding: '2rem',
-      boxSizing: 'border-box'
+      boxSizing: 'border-box',
+      // 性能优化
+      contain: 'layout style paint'
     }}>
-      {/* 简化的3x3网格布局 */}
-      <div className="w-full h-full max-w-4xl max-h-[600px] p-4">
-        <div className="grid grid-cols-3 gap-4 h-full">
-          {imagePlaceholders.map((placeholder) => (
-            <ImagePlaceholder
-              key={placeholder.id}
-              placeholder={placeholder}
-            />
-          ))}
-        </div>
+      {/* 叠放的图片组件 - 直接相对于视口定位 */}
+      {imageComponents}
+      
+      {/* 当前顶层图片信息 */}
+      <div 
+        className="absolute text-xs font-mono"
+        style={{
+          color: 'rgba(0, 255, 255, 0.5)',
+          fontSize: '14px',
+          bottom: '2rem',
+          left: '2rem',
+          zIndex: 1000
+        }}
+      >
+        当前顶层: 图片 {imageStack[0]}
       </div>
     </div>
   )
