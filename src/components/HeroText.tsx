@@ -110,7 +110,7 @@ const HeroText: React.FC<HeroTextProps> = ({ onComplete, onPhaseChange }) => {
 
 
   useEffect(() => {
-    let timeoutId: number
+    let timeoutId: ReturnType<typeof setTimeout>
 
     if (currentPhase === 'typing') {
       const currentIndex = visibleLetters.filter(Boolean).length

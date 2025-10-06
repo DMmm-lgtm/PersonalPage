@@ -33,18 +33,6 @@ const FloatingBox: React.FC = () => {
         cursor: 'pointer',
         transition: 'all 0.3s ease',
         userSelect: 'none',
-        // 添加一些可爱的装饰
-        '::before': {
-          content: '""',
-          position: 'absolute',
-          top: '-5px',
-          left: '-5px',
-          right: '-5px',
-          bottom: '-5px',
-          background: 'linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent)',
-          borderRadius: '25px',
-          zIndex: -1,
-        }
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.transform = 'translate(-50%, -50%) scale(1.1)'
@@ -58,18 +46,34 @@ const FloatingBox: React.FC = () => {
           ? '0 8px 32px rgba(255, 107, 107, 0.4), 0 4px 16px rgba(0, 0, 0, 0.3)'
           : '0 8px 32px rgba(255, 154, 158, 0.4), 0 4px 16px rgba(0, 0, 0, 0.2)'
       }}
-      onClick={() => {
+      onClick={(e) => {
         // 复制到剪贴板
+        const el = e.currentTarget
         navigator.clipboard.writeText('q494294512').then(() => {
           // 临时显示复制成功提示
-          const originalText = e.currentTarget.textContent
-          e.currentTarget.textContent = '已复制！'
-          setTimeout(() => {
-            e.currentTarget.textContent = originalText
+          const originalText = el.textContent
+          el.textContent = '已复制！'
+          window.setTimeout(() => {
+            el.textContent = originalText
           }, 1000)
         })
       }}
     >
+      {/* 装饰层，替代 ::before 伪元素 */}
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          top: '-5px',
+          left: '-5px',
+          right: '-5px',
+          bottom: '-5px',
+          background: 'linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent)',
+          borderRadius: '25px',
+          zIndex: -1,
+          pointerEvents: 'none'
+        }}
+      />
       catch me：q494294512
     </div>
   )
