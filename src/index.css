@@ -982,3 +982,38 @@ button:focus-visible {
     transform: translateY(0) scale(1);
   }
 }
+
+/* Jerboa文字出现动画 - 淡入效果 */
+@keyframes jerboaTextAppear {
+  0% { 
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  50% { 
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+  100% { 
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Jerboa文字摆动动画 - 可爱的左右摆动 */
+@keyframes jerboaTextWiggle {
+  0% { 
+    transform: rotate(0deg) scale(1);
+  }
+  25% { 
+    transform: rotate(2deg) scale(1.05);
+  }
+  50% { 
+    transform: rotate(0deg) scale(1);
+  }
+  75% { 
+    transform: rotate(-2deg) scale(1.05);
+  }
+  100% { 
+    transform: rotate(0deg) scale(1);
+  }
+}

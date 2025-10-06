@@ -1,15 +1,12 @@
-import { useMemo, useEffect, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 import ThemeToggle from './components/ThemeToggle'
-import RightContent from './components/RightContent'
-import LeftGallery from './components/LeftGallery'
 import HeroText from './components/HeroText'
 
 // 主应用内容组件
 const AppContent: React.FC = () => {
   const { theme } = useTheme()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
-  const [heroPhase, setHeroPhase] = useState<'waiting' | 'typing' | 'holding' | 'deleting' | 'complete'>('waiting')
   const [showJerboa, setShowJerboa] = useState(false)
   
   // 🚀 性能优化：缓存粒子数据，避免每次渲染都重新计算随机值
@@ -147,8 +144,6 @@ const AppContent: React.FC = () => {
 
   // 处理HeroText阶段变化
   const handleHeroPhaseChange = (phase: 'waiting' | 'typing' | 'holding' | 'deleting' | 'complete') => {
-    setHeroPhase(phase)
-    
     // 当HeroText完成时，延迟显示jerboa
     if (phase === 'complete') {
       setTimeout(() => {
@@ -614,18 +609,26 @@ const AppContent: React.FC = () => {
               backfaceVisibility: 'hidden'
             }}
           >
-            <img
-              src="/jerboa.svg"
-              alt="Jerboa"
+            <div
               style={{
                 width: '6rem',
                 height: '6rem',
-                filter: theme === 'dark' 
-                  ? 'drop-shadow(0 0 12px rgba(0, 255, 255, 0.4))' 
-                  : 'drop-shadow(0 0 12px rgba(0, 0, 0, 0.4))',
-                transition: 'filter 1s ease'
+                animation: 'jerboaTextAppear 2s ease-out 1s forwards, jerboaTextWiggle 3s ease-in-out 3s infinite'
               }}
-            />
+            >
+              <img
+                src="/jerboa.svg"
+                alt="Jerboa"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  filter: theme === 'dark' 
+                    ? 'drop-shadow(0 0 12px rgba(0, 255, 255, 0.4))' 
+                    : 'drop-shadow(0 0 12px rgba(0, 0, 0, 0.4))',
+                  transition: 'filter 1s ease'
+                }}
+              />
+            </div>
           </div>
         )}
 
