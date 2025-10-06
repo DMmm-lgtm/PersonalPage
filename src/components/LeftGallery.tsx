@@ -29,7 +29,8 @@ const ImagePlaceholder: React.FC<{
   stackIndex: number // 在栈中的位置（0为最顶层）
   isTop: boolean // 是否为最顶层
   onClick: (id: number) => void
-}> = ({ placeholder, stackIndex, isTop, onClick }) => {
+  url?: string | null
+}> = ({ placeholder, stackIndex, isTop, onClick, url }) => {
   const { theme } = useTheme()
   const [isHovered, setIsHovered] = useState(false)
 
@@ -40,8 +41,8 @@ const ImagePlaceholder: React.FC<{
   // 计算z-index（最顶层最高）
   const zIndex = 100 - stackIndex
 
-  // 仅从 Supabase 读取前3张图片（根据 id 对应索引 0/1/2）
-  const supabaseUrl = (window as any).__GALLERY_URLS__?.[placeholder.id - 1] as string | undefined
+  // 图片 URL 由父组件传入（从 Supabase 获取后设置到状态）
+  const supabaseUrl = url || undefined
 
   return (
     <div
@@ -94,7 +95,7 @@ const ImagePlaceholder: React.FC<{
         {/* 图片内容 */}
         <div className="absolute inset-0 flex items-center justify-center">
           {supabaseUrl ? (
-            // 仅使用 Supabase 图片
+            // 渲染图片
             <img 
               src={supabaseUrl}
               alt={`照片 ${placeholder.id}`}
@@ -123,25 +124,19 @@ const ImagePlaceholder: React.FC<{
             className="absolute inset-0 flex items-center justify-center text-center"
             style={{ display: supabaseUrl ? 'none' : 'flex' }}
           >
-            <div>
-              <div 
-                className="text-3xl mb-3 transition-all duration-300"
-                style={{
-                  opacity: isTop ? 0.9 : 0.6,
-                  transform: isHovered ? 'scale(1.1)' : 'scale(1)'
-                }}
-              >
-                📷
-              </div>
-              <div 
-                className="text-sm font-mono font-medium transition-all duration-300"
-                style={{
-                  color: theme === 'dark' ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)',
-                  opacity: isTop ? 0.9 : 0.5
-                }}
-              >
-                图片 {placeholder.id}
-              </div>
+            <div 
+              className="text-sm font-mono font-medium transition-all duration-300"
+              style={{
+                color: theme === 'dark' ? 'rgba(255, 120, 120, 0.9)' : '#cc0000',
+                backgroundColor: theme === 'dark' ? 'rgba(255, 120, 120, 0.08)' : 'rgba(204, 0, 0, 0.06)',
+                border: `1px solid ${theme === 'dark' ? 'rgba(255, 120, 120, 0.4)' : 'rgba(204, 0, 0, 0.35)'}`,
+                padding: '0.5rem 0.75rem',
+                borderRadius: '0.5rem',
+                opacity: isTop ? 0.95 : 0.7,
+                transform: isHovered ? 'scale(1.02)' : 'scale(1)'
+              }}
+            >
+              url error
             </div>
           </div>
         </div>
@@ -184,6 +179,7 @@ const LeftGallery: React.FC = () => {
   const [imageStack, setImageStack] = useState<number[]>([1, 2, 3, 4, 5, 6, 7, 8, 9])
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
+  const [galleryUrls, setGalleryUrls] = useState<(string | null)[]>(Array(9).fill(null))
   
   // 处理图片点击事件
   const handleImageClick = (clickedId: number) => {
@@ -221,10 +217,11 @@ const LeftGallery: React.FC = () => {
           stackIndex={stackIndex}
           isTop={stackIndex === 0}
           onClick={handleImageClick}
+          url={galleryUrls[placeholder.id - 1]}
         />
       )
     })
-  }, [imageStack])
+  }, [imageStack, galleryUrls])
 
   // 拉取 Supabase 图片列表：优先根目录，若为空回退到 gallery/
   useEffect(() => {
@@ -242,26 +239,16 @@ const LeftGallery: React.FC = () => {
           return { path, ...res }
         }
 
-        // 先尝试根目录
+        // 仅使用根目录（根据你的说明，照片都在 image 桶的根目录）
         let listing = await listPath('')
         if (!active) return
         if (listing.error) console.warn('Supabase list root error:', listing.error.message)
 
         let usingPath = ''
         let files = (listing.data ?? []).filter((item: any) => item && item.name)
-        // 若根目录无文件，则回退到 gallery/
-        if (files.length === 0) {
-          const fallback = await listPath('gallery')
-          if (!active) return
-          if (fallback.error) console.warn('Supabase list gallery/ error:', fallback.error.message)
-          usingPath = 'gallery'
-          files = (fallback.data ?? []).filter((item: any) => item && item.name)
-        }
 
         if (!files.length) {
-          console.log('Supabase: 根目录与 gallery/ 均无文件')
-          ;(window as any).__GALLERY_URLS__ = []
-          ;(window as any).GALLERY_URLS = []
+          console.log('Supabase: 根目录无文件')
           return
         }
 
@@ -278,17 +265,10 @@ const LeftGallery: React.FC = () => {
           }
         }
 
-        // 规范化文件名映射，严格匹配 photo1..photo9（忽略扩展名）
-        const fileNames: string[] = files.map((f: any) => f.name)
-        const findByPrefix = (prefix: string) => fileNames.find(n => n.toLowerCase().startsWith(prefix))
+        // 直接按返回列表顺序取前 9 张（无需特定命名或 gallery/ 文件夹）
+        const targets: string[] = files.slice(0, 9).map((f: any) => f.name)
 
-        const targets: string[] = []
-        for (let i = 1; i <= 9; i++) {
-          const name = findByPrefix(`photo${i}`)
-          targets.push(name || '')
-        }
-
-        const fullPaths = targets.map(name => name ? (usingPath ? `${usingPath}/${name}` : name) : '')
+        const fullPaths = targets.map(name => name ? name : '')
         const urls: (string | null)[] = await Promise.all(fullPaths.map(p => p ? buildUrlFor(p) : Promise.resolve(null)))
 
         console.log('Supabase: 使用路径 =', usingPath || '(root)', ' 总文件数 =', files.length)
@@ -296,8 +276,9 @@ const LeftGallery: React.FC = () => {
         console.log('Supabase: 生成URL =', urls)
 
         // 保持长度为9的数组，对应占位 id 1..9
-        ;(window as any).__GALLERY_URLS__ = urls
-        ;(window as any).GALLERY_URLS = urls
+        setGalleryUrls(urls)
+
+        // （移除诊断网络请求）
       } catch (e: any) {
         if (!active) return
         setError(e?.message ?? '未知错误')
@@ -333,22 +314,10 @@ const LeftGallery: React.FC = () => {
           加载失败：{error}
         </div>
       )}
+      {/* 调试显示已移除 */}
       {/* 叠放的图片组件 - 直接相对于视口定位 */}
       {imageComponents}
       
-      {/* 当前顶层图片信息 */}
-      <div 
-        className="absolute text-xs font-mono"
-        style={{
-          color: 'rgba(0, 255, 255, 0.5)',
-          fontSize: '14px',
-          bottom: '2rem',
-          left: '2rem',
-          zIndex: 1000
-        }}
-      >
-        当前顶层: 图片 {imageStack[0]}
-      </div>
     </div>
   )
 }

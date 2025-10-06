@@ -183,7 +183,7 @@ const AppContent: React.FC = () => {
         const initY = window.innerHeight * 0.75
         setJerboaCurrent({ x: initX, y: initY })
         setJerboaTarget({ x: initX, y: initY })
-      }, 2000) // 延迟2秒后显示jerboa
+      }, 1000) // 延迟2秒后显示jerboa
     }
   };
 
