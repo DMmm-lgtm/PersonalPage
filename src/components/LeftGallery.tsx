@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { useTheme } from '../contexts/ThemeContext'
+import { supabase } from '../lib/supabase'
 
 // 图片占位数据类型定义
 interface ImagePlaceholder {
@@ -90,9 +91,9 @@ const ImagePlaceholder: React.FC<{
         {/* 图片内容 */}
         <div className="absolute inset-0 flex items-center justify-center">
           {placeholder.id <= 3 ? (
-            // 前3张图片显示真实图片
+            // 前3张图片显示 Supabase 图片（若可用），否则退回到本地静态图
             <img 
-              src={`/photo${placeholder.id}.png`} 
+              src={(window as any).__GALLERY_URLS__?.[placeholder.id - 1] || `/photo${placeholder.id}.png`} 
               alt={`照片 ${placeholder.id}`}
               className="w-full h-full object-cover"
               style={{
@@ -178,6 +179,8 @@ const ImagePlaceholder: React.FC<{
 const LeftGallery: React.FC = () => {
   // 图片栈顺序状态管理（初始时1号图片在最顶层，9号图片在最底层）
   const [imageStack, setImageStack] = useState<number[]>([1, 2, 3, 4, 5, 6, 7, 8, 9])
+  const [loading, setLoading] = useState<boolean>(true)
+  const [error, setError] = useState<string | null>(null)
   
   // 处理图片点击事件
   const handleImageClick = (clickedId: number) => {
@@ -220,6 +223,38 @@ const LeftGallery: React.FC = () => {
     })
   }, [imageStack])
 
+  // 拉取 Supabase 图片列表（默认从 image 桶的 gallery/ 子目录）
+  useEffect(() => {
+    let active = true
+    ;(async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const { data, error } = await supabase
+          .storage
+          .from('image')
+          .list('gallery', { limit: 100, sortBy: { column: 'name', order: 'asc' } })
+
+        if (!active) return
+        if (error) { setError(error.message); setLoading(false); return }
+
+        const files = (data ?? []).filter(item => !item.id) // 过滤掉文件夹（Storage 列表里文件夹无 name? 依后端返回）
+        const urls: string[] = files.map((f) => {
+          const { data } = supabase.storage.from('image').getPublicUrl(`gallery/${f.name}`)
+          return data.publicUrl
+        })
+        // 将 URL 暂存到全局，供占位组件读取，避免在 JSX 中频繁创建对象（遵守性能规范）
+        ;(window as any).__GALLERY_URLS__ = urls
+      } catch (e: any) {
+        if (!active) return
+        setError(e?.message ?? '未知错误')
+      } finally {
+        if (active) setLoading(false)
+      }
+    })()
+    return () => { active = false }
+  }, [])
+
   return (
     <div style={{ 
       width: '100vw', 
@@ -234,6 +269,17 @@ const LeftGallery: React.FC = () => {
       // 性能优化
       contain: 'layout style paint'
     }}>
+      {/* 加载与错误状态提示（简洁显示，不遮挡布局） */}
+      {loading && (
+        <div className="absolute top-4 left-4 text-xs font-mono" style={{ color: 'rgba(0, 255, 255, 0.5)', zIndex: 1000 }}>
+          正在从 Supabase 加载图片...
+        </div>
+      )}
+      {error && (
+        <div className="absolute top-4 left-4 text-xs font-mono" style={{ color: 'rgba(255, 100, 100, 0.8)', zIndex: 1000 }}>
+          加载失败：{error}
+        </div>
+      )}
       {/* 叠放的图片组件 - 直接相对于视口定位 */}
       {imageComponents}
       

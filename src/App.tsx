@@ -1,13 +1,27 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 import ThemeToggle from './components/ThemeToggle'
 import HeroText from './components/HeroText'
+import LeftGallery from './components/LeftGallery'
+import RightContent from './components/RightContent'
 
 // 主应用内容组件
 const AppContent: React.FC = () => {
   const { theme } = useTheme()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const [showJerboa, setShowJerboa] = useState(false)
+  // Jerboa 路径跟随所需状态
+  const [jerboaCurrent, setJerboaCurrent] = useState<{ x: number; y: number } | null>(null)
+  const [jerboaTarget, setJerboaTarget] = useState<{ x: number; y: number } | null>(null)
+  const [jerboaPath, setJerboaPath] = useState<string>('')
+  const [jerboaAnimKey, setJerboaAnimKey] = useState<number>(0)
+  const lastMoveRef = useRef<number>(Date.now())
+  const idleTimerRef = useRef<number | null>(null)
+  const [isHopping, setIsHopping] = useState<boolean>(false)
+  // 自适应动画参数
+  const [hopDurationSec, setHopDurationSec] = useState<number>(1.2)
+  const [bobAmpPx, setBobAmpPx] = useState<number>(6)
+  const [bobPeriodSec, setBobPeriodSec] = useState<number>(1.2)
   
   // 🚀 性能优化：缓存粒子数据，避免每次渲染都重新计算随机值
   const particleSequences = useMemo(() => {
@@ -142,31 +156,137 @@ const AppContent: React.FC = () => {
     }
   };
 
+  // 刷新时默认定位到中间界面
+  useEffect(() => {
+    const el = scrollContainerRef.current
+    if (!el) return
+    const scrollToMiddle = () => {
+      el.scrollLeft = window.innerWidth
+    }
+    // 下一帧执行，确保DOM尺寸已就绪
+    requestAnimationFrame(scrollToMiddle)
+    // 页面完全加载后再尝试一次，提升稳定性
+    const onLoad = () => scrollToMiddle()
+    window.addEventListener('load', onLoad)
+    return () => window.removeEventListener('load', onLoad)
+  }, [])
+
   // 处理HeroText阶段变化
   const handleHeroPhaseChange = (phase: 'waiting' | 'typing' | 'holding' | 'deleting' | 'complete') => {
     // 当HeroText完成时，延迟显示jerboa
     if (phase === 'complete') {
       setTimeout(() => {
         setShowJerboa(true)
+        // 初始化 Jerboa 起点到“中间面板”的视口相对 60% 位置（叠加横向滚动偏移）
+        const scrollLeft = scrollContainerRef.current?.scrollLeft ?? 0
+        const initX = scrollLeft + window.innerWidth * 0.6
+        const initY = window.innerHeight * 0.75
+        setJerboaCurrent({ x: initX, y: initY })
+        setJerboaTarget({ x: initX, y: initY })
       }, 2000) // 延迟2秒后显示jerboa
     }
   };
 
+  // 监听鼠标移动，更新目标位置与空闲计时
+  useEffect(() => {
+    if (!showJerboa) return;
+    const onMove = (e: MouseEvent) => {
+      lastMoveRef.current = Date.now()
+      const scrollLeft = scrollContainerRef.current?.scrollLeft ?? 0
+      setJerboaTarget({ x: e.clientX + scrollLeft, y: e.clientY })
+    }
+    window.addEventListener('mousemove', onMove)
+    return () => window.removeEventListener('mousemove', onMove)
+  }, [showJerboa])
+
+  // 根据当前点与目标点生成二次贝塞尔曲线，并触发一次跳跃动画
+  const triggerHop = (
+    start: { x: number; y: number },
+    end: { x: number; y: number },
+    variance: number = 0,
+    opts?: { forceDurationSec?: number; forceBobAmpPx?: number; forceBobPeriodSec?: number }
+  ) => {
+    // 若正在跳跃，则不生成新曲线，避免起点与视觉不一致
+    if (isHopping) return
+    const dx = end.x - start.x
+    const dy = end.y - start.y
+    const midX = start.x + dx * 0.5
+    const midY = start.y + dy * 0.5
+    const distance = Math.hypot(dx, dy)
+    // 让控制点朝上拱起，幅度与距离相关；加上少量随机性（variance）
+    const arcHeight = Math.min(160, Math.max(40, distance * 0.25)) + variance
+    const controlX = midX - 0.15 * dx // 稍向左偏，产生“向左上方凸起”的感觉
+    const controlY = midY - arcHeight
+    const path = `path("M ${start.x} ${start.y} Q ${controlX} ${controlY} ${end.x} ${end.y}")`
+    setJerboaPath(path)
+    setIsHopping(true)
+    // 自适应参数：根据距离调节
+    const norm = Math.max(0, Math.min(1, distance / 600))
+    const hopDurBase = 0.7 + norm * 0.9 // 0.7s - 1.6s
+    const bobAmpBase = 3 + norm * 7     // 3px - 10px
+    const bobPeriodBase = 1.2 - norm * 0.5 // 1.2s - 0.7s（越远越快）
+    const hopDur = opts?.forceDurationSec ?? hopDurBase
+    const bobAmp = opts?.forceBobAmpPx ?? bobAmpBase
+    const bobPeriod = opts?.forceBobPeriodSec ?? bobPeriodBase
+    setHopDurationSec(hopDur)
+    setBobAmpPx(bobAmp)
+    setBobPeriodSec(Math.max(0.5, bobPeriod))
+    // 刷新动画 key 以重启动画
+    setJerboaAnimKey(k => k + 1)
+  }
+
+  // 当目标变化时，触发跳跃
+  useEffect(() => {
+    if (!jerboaCurrent || !jerboaTarget) return
+    // 目标与当前差距过小则不跳
+    const d = Math.hypot(jerboaTarget.x - jerboaCurrent.x, jerboaTarget.y - jerboaCurrent.y)
+    if (d < 12) return
+    // 起点使用“当前实际位置” jerboaCurrent
+    triggerHop(jerboaCurrent, jerboaTarget)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jerboaTarget])
+
+  // 空闲3秒后，进行缓慢小范围移动：生成近距离目标并以更慢参数移动
+  useEffect(() => {
+    if (!showJerboa) return
+    const checkIdle = () => {
+      const now = Date.now()
+      if (now - lastMoveRef.current > 3000 && jerboaCurrent && !isHopping) {
+        // 生成一个靠近当前位置的小目标点（半径 60px 内随机）
+        const angle = Math.random() * Math.PI * 2
+        const radius = 30 + Math.random() * 30 // 30-60px
+        const end = { x: jerboaCurrent.x + Math.cos(angle) * radius, y: jerboaCurrent.y + Math.sin(angle) * radius }
+        // 使用较慢参数、较小幅度、较慢频率
+        triggerHop(jerboaCurrent, end, 0, { forceDurationSec: 1.8, forceBobAmpPx: 4, forceBobPeriodSec: 1.4 })
+        lastMoveRef.current = now
+      }
+      idleTimerRef.current = window.setTimeout(checkIdle, 400)
+    }
+    idleTimerRef.current = window.setTimeout(checkIdle, 400)
+    return () => {
+      if (idleTimerRef.current) window.clearTimeout(idleTimerRef.current)
+      idleTimerRef.current = null
+    }
+  }, [showJerboa, jerboaCurrent, jerboaTarget, isHopping])
+
   return (
     <div style={{ minHeight: '100vh', position: 'relative', overflow: 'hidden' }}>
-      {/* 主页面容器 - 直接显示，不需要滚动 */}
-      <div 
+      {/* 横向滚动容器：左 / 中 / 右 三屏 */}
+      <div
         ref={handleScrollContainerRef}
-        style={{ 
-          position: 'relative', 
-          zIndex: 10, 
-          overflow: 'hidden',
+        style={{
+          position: 'relative',
+          zIndex: 10,
+          overflowX: 'auto',
+          overflowY: 'hidden',
           width: '100vw',
-          height: '100vh'
+          height: '100vh',
+          scrollSnapType: 'x mandatory',
+          whiteSpace: 'nowrap'
         }}
       >
-        {/* Journey风格背景 - 单页面背景 */}
-        <div style={{ position: 'absolute', top: 0, left: 0, width: '100vw', height: '100%', zIndex: 1 }}>
+        {/* Journey风格背景 - 覆盖三屏 */}
+        <div style={{ position: 'absolute', top: 0, left: 0, width: '300vw', height: '100%', zIndex: 1, pointerEvents: 'none' }}>
         {/* 主背景层 - 清晨沙漠色调 */}
         <div 
           style={{
@@ -601,49 +721,88 @@ const AppContent: React.FC = () => {
           <div
             style={{
               position: 'absolute',
-              bottom: '25%',
-              left: '60%',
+              inset: 0,
               zIndex: 15,
-              animation: 'jerboaEmergeFromSand 3s ease-out forwards',
-              willChange: 'transform, opacity',
-              backfaceVisibility: 'hidden'
+              pointerEvents: 'none'
             }}
           >
+            {/* Motion-path mover */}
             <div
+              key={jerboaAnimKey}
+              onAnimationEnd={() => {
+                if (jerboaTarget) setJerboaCurrent(jerboaTarget)
+                setIsHopping(false)
+              }}
               style={{
-                width: '6rem',
-                height: '6rem',
-                animation: 'jerboaTextAppear 2s ease-out 1s forwards, jerboaTextWiggle 3s ease-in-out 3s infinite'
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                width: '0px',
+                height: '0px',
+                // 使用 CSS motion-path
+                offsetPath: jerboaPath || undefined,
+                // 兼容 Safari 的私有属性
+                ['WebkitOffsetPath' as any]: jerboaPath || undefined,
+                offsetRotate: '0deg',
+                ['WebkitOffsetRotate' as any]: '0deg',
+                animation: jerboaPath
+                  ? `jerboaHop ${hopDurationSec}s cubic-bezier(0.4, 0, 0.2, 1) forwards`
+                  : undefined,
+                willChange: 'transform, offset-distance, opacity',
+                backfaceVisibility: 'hidden'
               }}
             >
-              <img
-                src="/jerboa.svg"
-                alt="Jerboa"
+              <div
                 style={{
-                  width: '100%',
-                  height: '100%',
-                  filter: theme === 'dark' 
-                    ? 'drop-shadow(0 0 12px rgba(0, 255, 255, 0.4))' 
-                    : 'drop-shadow(0 0 12px rgba(0, 0, 0, 0.4))',
-                  transition: 'filter 1s ease'
+                  transform: 'translate(-48px, -48px)', // 将图标中心对齐路径点
+                  width: '6rem',
+                  height: '6rem',
                 }}
-              />
+              >
+                <img
+                  src="/jerboa.svg"
+                  alt="Jerboa"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    filter: theme === 'dark' 
+                      ? 'drop-shadow(0 0 12px rgba(0, 255, 255, 0.4))' 
+                      : 'drop-shadow(0 0 12px rgba(0, 0, 0, 0.4))',
+                    transition: 'filter 1s ease',
+                    // 叠加上下跳动动画（不停顿），配合路径运动（使用CSS变量做幅度）
+                    animation: `jerboaBob ${bobPeriodSec}s ease-in-out infinite`,
+                    // 传入可调振幅
+                    ['--jerboa-bob-amp' as any]: `${bobAmpPx}px`,
+                    willChange: 'transform, opacity',
+                    backfaceVisibility: 'hidden'
+                  }}
+                />
+              </div>
             </div>
           </div>
         )}
 
-        {/* 内容层 - 在背景之上 */}
-        {/* 主页面 - 直接显示中间页面，从上方加载 */}
-        <div style={{
-          position: 'relative',
-          width: '100vw',
-          height: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 10
-        }}>
-          <HeroText onPhaseChange={handleHeroPhaseChange} />
+        {/* 三屏内容：左 / 中 / 右 */}
+        <div style={{ display: 'flex', width: '300vw', height: '100%', position: 'relative', zIndex: 10 }}>
+          <div style={{ width: '100vw', height: '100vh', scrollSnapAlign: 'start' }}>
+            <LeftGallery />
+          </div>
+          <div style={{ width: '100vw', height: '100vh', scrollSnapAlign: 'start' }}>
+            <div style={{
+              position: 'relative',
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 10
+            }}>
+              <HeroText onPhaseChange={handleHeroPhaseChange} />
+            </div>
+          </div>
+          <div style={{ width: '100vw', height: '100vh', scrollSnapAlign: 'start' }}>
+            <RightContent />
+          </div>
         </div>
       </div>
       

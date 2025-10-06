@@ -1017,3 +1017,35 @@ button:focus-visible {
     transform: rotate(0deg) scale(1);
   }
 }
+
+/* Jerboa 沿路径跳跃动画 - 使用 CSS motion-path 的 offset-distance */
+@keyframes jerboaHop {
+  0% {
+    offset-distance: 0%;
+    -webkit-offset-distance: 0%;
+    opacity: 0.9;
+    transform: translateZ(0) scale(0.98);
+  }
+  10% { opacity: 1; }
+  50% {
+    opacity: 1;
+    transform: translateZ(0) scale(1.06);
+  }
+  90% { opacity: 0.95; }
+  100% {
+    offset-distance: 100%;
+    -webkit-offset-distance: 100%;
+    opacity: 1;
+    transform: translateZ(0) scale(1.0);
+  }
+}
+
+/* Jerboa 上下跳动（叠加在沿路径移动之上） */
+@keyframes jerboaBob {
+  0%   { transform: translateY(0) scale(1); opacity: 1; }
+  20%  { transform: translateY(calc(var(--jerboa-bob-amp, 6px) * -1)) scale(1.02); }
+  40%  { transform: translateY(0) scale(1); }
+  60%  { transform: translateY(calc(var(--jerboa-bob-amp, 6px) * -0.66)) scale(1.01); }
+  80%  { transform: translateY(0) scale(1); }
+  100% { transform: translateY(calc(var(--jerboa-bob-amp, 6px) * -0.5)) scale(1.01); }
+}
