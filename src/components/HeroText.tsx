@@ -5,14 +5,38 @@ interface LetterProps {
   isVisible: boolean
   isDestroying: boolean
   destroyDelay: number
+  isWobbling?: boolean // 是否在晃动阶段
+  letterIndex: number // 字母在字符串中的索引
 }
 
-const Letter: React.FC<LetterProps> = ({ char, isVisible, isDestroying, destroyDelay }) => {
+const Letter: React.FC<LetterProps> = ({ char, isVisible, isDestroying, destroyDelay, isWobbling, letterIndex }) => {
   if (!isVisible) return null
 
   // 特殊处理空格字符
   const isSpace = char === '\u00A0' || char === ' '
   const spaceWidth = isSpace ? '0.5em' : 'auto'
+  
+  // 为每个字符分配不同的晃动动画（基于字符内容生成）
+  const getWobbleAnimation = () => {
+    if (!isWobbling) return 'none'
+    
+    // 计算当前字母的实际保持时间
+    const holdTime = 5000 // 整体保持5秒
+    const leftWobbleTime = 0 // 取消向左移动，持续随机晃动
+    const destroyDelay = 50 // 每个字母消失间隔50ms
+    
+    // 当前字母的晃动时长 = 总保持时间 - 当前字母的延迟 - 向左晃动时间
+    const wobbleDuration = holdTime - (letterIndex * destroyDelay) - leftWobbleTime
+    
+    // 确保晃动时间至少为1秒
+    const actualDuration = Math.max(wobbleDuration, 1000)
+    
+    // 使用字符的charCode来生成一致的随机数
+    const charCode = char.charCodeAt(0)
+    const wobbleIndex = (charCode % 9) + 1
+    
+    return `characterWobble${wobbleIndex} ${actualDuration}ms ease-in-out forwards`
+  }
 
   return (
     <span
@@ -31,7 +55,7 @@ const Letter: React.FC<LetterProps> = ({ char, isVisible, isDestroying, destroyD
         backfaceVisibility: 'hidden',
         animation: isDestroying 
           ? `letterDestroy 1s ease-out ${destroyDelay}ms forwards`
-          : 'none',
+          : getWobbleAnimation(),
         transformOrigin: 'center center',
         // 确保空格字符可见
         ...(isSpace && {
@@ -54,9 +78,9 @@ const HeroText: React.FC = () => {
   
   const fullText = 'Welcome\u00A0to\u00A0621\u00A0Space'
   const letters = fullText.split('')
-  const typingSpeed = 300 // 每秒2个字母 = 500毫秒/字母
-  const holdTime = 8000 // 保持10秒
-  const wordPause = 800 // 单词间间隔1秒
+  const typingSpeed = 200 // 每秒5个字母 = 200毫秒/字母
+  const holdTime = 5000 // 保持5秒
+  const wordPause = 600 // 单词间间隔0.6秒
   const destroyDelay = 50 // 每个字母粉碎间隔50ms
 
   // 初始化字母状态
@@ -75,12 +99,16 @@ const HeroText: React.FC = () => {
         // 检查是否需要添加间隔
         let delay = typingSpeed
         
-        // Welcome和621之间（位置7，空格后）
-        if (currentIndex === 7) {
+        // Welcome和to之间（位置7，空格后）
+        if (currentIndex === 8) {
           delay = wordPause
         }
-        // 621和Space之间（位置11，空格后）  
+        // to和621之间（位置10，空格后）
         else if (currentIndex === 11) {
+          delay = wordPause
+        }
+        // 621和Space之间（位置14，空格后）
+        else if (currentIndex === 15) {
           delay = wordPause
         }
         
@@ -119,10 +147,19 @@ const HeroText: React.FC = () => {
     }
   }, [visibleLetters, currentPhase])
 
-  // 光标闪烁效果（只在打字阶段显示，文字完成后立即消失）
+  // 光标闪烁效果（只在打字阶段显示，最后一个字母'e'出现时不显示）
   useEffect(() => {
     if (currentPhase !== 'typing') {
       setShowCursor(false)
+      return
+    }
+    
+    // 检查是否正在输入最后一个字母'e'（索引18）
+    const visibleCount = visibleLetters.filter(Boolean).length
+    const isTypingLastLetter = visibleCount === letters.length - 1 && letters[letters.length - 1] === 'e'
+    
+    if (isTypingLastLetter) {
+      setShowCursor(false) // 输入最后一个字母'e'时不显示光标
       return
     }
     
@@ -131,22 +168,36 @@ const HeroText: React.FC = () => {
     }, 500)
 
     return () => clearInterval(cursorInterval)
-  }, [currentPhase])
+  }, [currentPhase, visibleLetters, letters])
 
   return (
     <div style={{
-      fontSize: '5rem',
-      fontWeight: '900',
-      color: 'white',
-      textShadow: '4px 4px 16px rgba(0, 0, 0, 0.9)',
-      fontFamily: '"Kalam", "Caveat", "Dancing Script", cursive',
-      letterSpacing: '-0.03em',
-      margin: 0,
-      minHeight: '6rem',
+      // 整体页面居中
+      position: 'fixed',
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%)',
+      width: '100vw',
+      height: '100vh',
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'center'
+      justifyContent: 'center',
+      zIndex: 1000,
+      pointerEvents: 'none' // 不阻挡其他交互
     }}>
+      <div style={{
+        fontSize: '5rem',
+        fontWeight: '900',
+        color: 'white',
+        textShadow: '4px 4px 16px rgba(0, 0, 0, 0.9)',
+        fontFamily: '"Kalam", "Caveat", "Dancing Script", cursive',
+        letterSpacing: '-0.03em',
+        margin: 0,
+        minHeight: '6rem',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
       {letters.map((char, index) => (
         <Letter
           key={index}
@@ -154,19 +205,32 @@ const HeroText: React.FC = () => {
           isVisible={visibleLetters[index] || false}
           isDestroying={destroyingLetters[index] || false}
           destroyDelay={index * destroyDelay}
+          isWobbling={currentPhase === 'holding'}
+          letterIndex={index}
         />
       ))}
-      {currentPhase === 'typing' && (
-        <span 
-          style={{
-            opacity: showCursor ? 1 : 0,
-            transition: 'opacity 0.1s',
-            color: '#00FFFF'
-          }}
-        >
-          |
-        </span>
-      )}
+      {currentPhase === 'typing' && showCursor && (() => {
+        // 再次检查是否正在输入最后一个字母'e'，确保不渲染光标
+        const visibleCount = visibleLetters.filter(Boolean).length
+        const isTypingLastLetter = visibleCount === letters.length - 1 && letters[letters.length - 1] === 'e'
+        
+        if (isTypingLastLetter) return null
+        
+        return (
+          <span 
+            style={{
+              color: '#00FFFF',
+              fontSize: '5rem',
+              fontWeight: '900',
+              fontFamily: '"Kalam", "Caveat", "Dancing Script", cursive',
+              animation: 'cursorBlink 1s infinite'
+            }}
+          >
+            |
+          </span>
+        )
+      })()}
+      </div>
     </div>
   )
 }
