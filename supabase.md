@@ -165,7 +165,6 @@ const { data, error } = await supabase
   .createSignedUrl('gallery/xxx.jpg', 60 * 60); // 有效期 1 小时
 
 const signedUrl = data?.signedUrl;
-```
 
 列表后为每个文件生成签名 URL。注意：签名 URL 会过期，需要在客户端处理刷新或在导航/重新进入页面时重新获取。
 

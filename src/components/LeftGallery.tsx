@@ -93,7 +93,7 @@ const ImagePlaceholder: React.FC<{
       >
         {/* 图片内容 */}
         <div className="absolute inset-0 flex items-center justify-center">
-          {placeholder.id <= 3 && supabaseUrl ? (
+          {supabaseUrl ? (
             // 仅使用 Supabase 图片
             <img 
               src={supabaseUrl}
@@ -121,7 +121,7 @@ const ImagePlaceholder: React.FC<{
           {/* 占位符内容（当没有图片或图片加载失败时显示） */}
           <div 
             className="absolute inset-0 flex items-center justify-center text-center"
-            style={{ display: placeholder.id <= 3 && supabaseUrl ? 'none' : 'flex' }}
+            style={{ display: supabaseUrl ? 'none' : 'flex' }}
           >
             <div>
               <div 
@@ -264,13 +264,37 @@ const LeftGallery: React.FC = () => {
           return
         }
 
-        const urls: string[] = files.map((f: any) => {
-          const fullPath = usingPath ? `${usingPath}/${f.name}` : `${f.name}`
-          const { data } = supabase.storage.from('image').getPublicUrl(fullPath)
-          return data.publicUrl
-        })
-        console.log('Supabase: 使用路径 =', usingPath || '(root)', ' 文件数 =', files.length)
-        console.log('Supabase: 示例URL =', urls.slice(0, 3))
+        // 为每个文件生成可访问 URL：优先签名 URL，回退 public URL
+        const buildUrlFor = async (path: string): Promise<string | null> => {
+          try {
+            const signed = await supabase.storage.from('image').createSignedUrl(path, 3600)
+            if (signed.data?.signedUrl) return signed.data.signedUrl
+            const pub = supabase.storage.from('image').getPublicUrl(path)
+            return pub.data.publicUrl || null
+          } catch {
+            const pub = supabase.storage.from('image').getPublicUrl(path)
+            return pub.data.publicUrl || null
+          }
+        }
+
+        // 规范化文件名映射，严格匹配 photo1..photo9（忽略扩展名）
+        const fileNames: string[] = files.map((f: any) => f.name)
+        const findByPrefix = (prefix: string) => fileNames.find(n => n.toLowerCase().startsWith(prefix))
+
+        const targets: string[] = []
+        for (let i = 1; i <= 9; i++) {
+          const name = findByPrefix(`photo${i}`)
+          targets.push(name || '')
+        }
+
+        const fullPaths = targets.map(name => name ? (usingPath ? `${usingPath}/${name}` : name) : '')
+        const urls: (string | null)[] = await Promise.all(fullPaths.map(p => p ? buildUrlFor(p) : Promise.resolve(null)))
+
+        console.log('Supabase: 使用路径 =', usingPath || '(root)', ' 总文件数 =', files.length)
+        console.log('Supabase: 目标文件 =', targets)
+        console.log('Supabase: 生成URL =', urls)
+
+        // 保持长度为9的数组，对应占位 id 1..9
         ;(window as any).__GALLERY_URLS__ = urls
       } catch (e: any) {
         if (!active) return
