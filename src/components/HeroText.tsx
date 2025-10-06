@@ -54,9 +54,9 @@ const HeroText: React.FC = () => {
   
   const fullText = 'Welcome\u00A0621\u00A0Space'
   const letters = fullText.split('')
-  const typingSpeed = 500 // 每秒2个字母 = 500毫秒/字母
+  const typingSpeed = 300 // 每秒2个字母 = 500毫秒/字母
   const holdTime = 8000 // 保持10秒
-  const wordPause = 1000 // 单词间间隔1秒
+  const wordPause = 800 // 单词间间隔1秒
   const destroyDelay = 50 // 每个字母粉碎间隔50ms
 
   // 初始化字母状态

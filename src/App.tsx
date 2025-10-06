@@ -46,12 +46,15 @@ const AppContent: React.FC = () => {
     return animations[Math.floor(Math.random() * animations.length)];
   }, []); // 只在组件挂载时随机选择一次
 
-  // 📍 页面加载时自动滚动到中心区域（第二个区域）
+  // 📍 页面加载时自动滚动到中心区域（第二个区域 - Welcome 621 Space）
   useEffect(() => {
     const scrollToCenter = () => {
       if (scrollContainerRef.current) {
-        // 滚动到中心区域（100vw的位置）
-        scrollContainerRef.current.scrollLeft = window.innerWidth;
+        // 滚动到第二个区域（Welcome 621 Space页面）
+        // 第一个区域：0vw，第二个区域：100vw，第三个区域：200vw
+        const targetScroll = window.innerWidth;
+        scrollContainerRef.current.scrollLeft = targetScroll;
+        console.log('主滚动逻辑 - 目标位置:', targetScroll, '实际位置:', scrollContainerRef.current.scrollLeft);
       }
     };
 
@@ -60,9 +63,11 @@ const AppContent: React.FC = () => {
     
     // 多次延迟执行，确保DOM完全加载和渲染
     const timeoutIds = [
+      setTimeout(scrollToCenter, 50),
       setTimeout(scrollToCenter, 100),
-      setTimeout(scrollToCenter, 300),
-      setTimeout(scrollToCenter, 500)
+      setTimeout(scrollToCenter, 200),
+      setTimeout(scrollToCenter, 500),
+      setTimeout(scrollToCenter, 1000)
     ];
     
     // 监听窗口大小变化，确保始终居中
@@ -108,16 +113,89 @@ const AppContent: React.FC = () => {
     };
   }, []);
 
+  // 📍 强制滚动到Welcome 621 Space页面 - 确保首次加载和刷新都显示正确页面
+  useEffect(() => {
+    // 使用requestAnimationFrame确保DOM完全渲染后执行
+    const forceScrollToWelcome = () => {
+      if (scrollContainerRef.current) {
+        // 强制滚动到第二个区域（Welcome 621 Space页面）
+        const targetScroll = window.innerWidth;
+        scrollContainerRef.current.scrollLeft = targetScroll;
+        console.log('强制滚动到:', targetScroll, '当前滚动位置:', scrollContainerRef.current.scrollLeft);
+      }
+    };
+
+    // 立即执行
+    forceScrollToWelcome();
+    
+    // 使用requestAnimationFrame确保在下一帧执行
+    requestAnimationFrame(() => {
+      forceScrollToWelcome();
+    });
+
+    // 多次延迟执行，确保滚动生效
+    const timeouts = [
+      setTimeout(forceScrollToWelcome, 100),
+      setTimeout(forceScrollToWelcome, 300),
+      setTimeout(forceScrollToWelcome, 500),
+      setTimeout(forceScrollToWelcome, 1000),
+      setTimeout(forceScrollToWelcome, 2000)
+    ];
+
+    // 页面完全加载后执行
+    const handleLoad = () => {
+      forceScrollToWelcome();
+    };
+
+    if (document.readyState === 'complete') {
+      forceScrollToWelcome();
+    } else {
+      window.addEventListener('load', handleLoad);
+    }
+
+    return () => {
+      timeouts.forEach(clearTimeout);
+      window.removeEventListener('load', handleLoad);
+    };
+  }, []);
+
+  // 📍 组件渲染后立即强制滚动
+  const handleScrollContainerRef = (element: HTMLDivElement | null) => {
+    if (element) {
+      scrollContainerRef.current = element;
+      
+      // 强制滚动到Welcome页面（第二个区域）
+      const targetScroll = window.innerWidth;
+      
+      // 立即设置滚动位置
+      element.scrollLeft = targetScroll;
+      
+      // 强制重新计算布局
+      element.offsetHeight;
+      
+      // 再次设置滚动位置
+      element.scrollLeft = targetScroll;
+      
+      console.log('容器引用设置:');
+      console.log('- 窗口宽度:', window.innerWidth);
+      console.log('- 目标滚动位置:', targetScroll);
+      console.log('- 实际滚动位置:', element.scrollLeft);
+      console.log('- 容器总宽度:', element.scrollWidth);
+      console.log('- 容器可见宽度:', element.clientWidth);
+    }
+  };
+
   return (
     <div style={{ minHeight: '100vh', position: 'relative', overflow: 'hidden' }}>
       {/* 水平滚动容器 - 超大画布 */}
       <div 
-        ref={scrollContainerRef}
+        ref={handleScrollContainerRef}
         style={{ 
           position: 'relative', 
           zIndex: 10, 
           overflowX: 'scroll', 
           overflowY: 'hidden',
+          width: '100vw',
           height: '100vh',
           scrollBehavior: 'smooth'
         }}
