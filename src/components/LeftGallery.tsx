@@ -40,6 +40,9 @@ const ImagePlaceholder: React.FC<{
   // 计算z-index（最顶层最高）
   const zIndex = 100 - stackIndex
 
+  // 仅从 Supabase 读取前3张图片（根据 id 对应索引 0/1/2）
+  const supabaseUrl = (window as any).__GALLERY_URLS__?.[placeholder.id - 1] as string | undefined
+
   return (
     <div
       className="absolute overflow-hidden rounded-lg cursor-pointer"
@@ -90,10 +93,10 @@ const ImagePlaceholder: React.FC<{
       >
         {/* 图片内容 */}
         <div className="absolute inset-0 flex items-center justify-center">
-          {placeholder.id <= 3 ? (
-            // 前3张图片显示 Supabase 图片（若可用），否则退回到本地静态图
+          {placeholder.id <= 3 && supabaseUrl ? (
+            // 仅使用 Supabase 图片
             <img 
-              src={(window as any).__GALLERY_URLS__?.[placeholder.id - 1] || `/photo${placeholder.id}.png`} 
+              src={supabaseUrl}
               alt={`照片 ${placeholder.id}`}
               className="w-full h-full object-cover"
               style={{
@@ -118,7 +121,7 @@ const ImagePlaceholder: React.FC<{
           {/* 占位符内容（当没有图片或图片加载失败时显示） */}
           <div 
             className="absolute inset-0 flex items-center justify-center text-center"
-            style={{ display: placeholder.id <= 3 ? 'none' : 'flex' }}
+            style={{ display: placeholder.id <= 3 && supabaseUrl ? 'none' : 'flex' }}
           >
             <div>
               <div 
@@ -223,27 +226,51 @@ const LeftGallery: React.FC = () => {
     })
   }, [imageStack])
 
-  // 拉取 Supabase 图片列表（默认从 image 桶的 gallery/ 子目录）
+  // 拉取 Supabase 图片列表：优先根目录，若为空回退到 gallery/
   useEffect(() => {
     let active = true
     ;(async () => {
       try {
         setLoading(true)
         setError(null)
-        const { data, error } = await supabase
-          .storage
-          .from('image')
-          .list('gallery', { limit: 100, sortBy: { column: 'name', order: 'asc' } })
 
+        const listPath = async (path: string) => {
+          const res = await supabase
+            .storage
+            .from('image')
+            .list(path, { limit: 100, sortBy: { column: 'name', order: 'asc' } })
+          return { path, ...res }
+        }
+
+        // 先尝试根目录
+        let listing = await listPath('')
         if (!active) return
-        if (error) { setError(error.message); setLoading(false); return }
+        if (listing.error) console.warn('Supabase list root error:', listing.error.message)
 
-        const files = (data ?? []).filter(item => !item.id) // 过滤掉文件夹（Storage 列表里文件夹无 name? 依后端返回）
-        const urls: string[] = files.map((f) => {
-          const { data } = supabase.storage.from('image').getPublicUrl(`gallery/${f.name}`)
+        let usingPath = ''
+        let files = (listing.data ?? []).filter((item: any) => item && item.name)
+        // 若根目录无文件，则回退到 gallery/
+        if (files.length === 0) {
+          const fallback = await listPath('gallery')
+          if (!active) return
+          if (fallback.error) console.warn('Supabase list gallery/ error:', fallback.error.message)
+          usingPath = 'gallery'
+          files = (fallback.data ?? []).filter((item: any) => item && item.name)
+        }
+
+        if (!files.length) {
+          console.log('Supabase: 根目录与 gallery/ 均无文件')
+          ;(window as any).__GALLERY_URLS__ = []
+          return
+        }
+
+        const urls: string[] = files.map((f: any) => {
+          const fullPath = usingPath ? `${usingPath}/${f.name}` : `${f.name}`
+          const { data } = supabase.storage.from('image').getPublicUrl(fullPath)
           return data.publicUrl
         })
-        // 将 URL 暂存到全局，供占位组件读取，避免在 JSX 中频繁创建对象（遵守性能规范）
+        console.log('Supabase: 使用路径 =', usingPath || '(root)', ' 文件数 =', files.length)
+        console.log('Supabase: 示例URL =', urls.slice(0, 3))
         ;(window as any).__GALLERY_URLS__ = urls
       } catch (e: any) {
         if (!active) return
