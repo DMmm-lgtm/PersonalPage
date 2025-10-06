@@ -75,9 +75,8 @@ const ImagePlaceholder: React.FC<{
       <div
         className="w-full h-full relative"
         style={{
-          backgroundColor: theme === 'dark' 
-            ? 'rgba(255, 255, 255, 0.08)' 
-            : 'rgba(0, 0, 0, 0.08)',
+          // 黑灰色填充背景，作为留边区域
+          backgroundColor: theme === 'dark' ? '#0a0a0a' : '#111111',
           border: `1px solid ${theme === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)'}`,
           // 悬停时的阴影效果
           boxShadow: isHovered 
@@ -101,13 +100,17 @@ const ImagePlaceholder: React.FC<{
               alt={`照片 ${placeholder.id}`}
               className="w-full h-full object-cover"
               style={{
-                opacity: isTop ? 0.9 : 0.6,
+                opacity: isTop ? 0.9 : 0.75,
                 transform: isHovered ? 'scale(1.02)' : 'scale(1)',
                 transition: 'opacity 0.3s ease, transform 0.3s ease',
+                // 保持比例并完整展示，始终居中
                 width: '100%',
                 height: '100%',
-                objectFit: 'cover',
-                borderRadius: '0.5rem'
+                objectFit: 'contain',
+                objectPosition: 'center center',
+                display: 'block',
+                borderRadius: '0.5rem',
+                backgroundColor: 'transparent'
               }}
               onError={(e) => {
                 // 如果图片加载失败，显示占位符
