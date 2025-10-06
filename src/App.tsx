@@ -3,6 +3,7 @@ import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 import ThemeToggle from './components/ThemeToggle'
 import RightContent from './components/RightContent'
 import LeftGallery from './components/LeftGallery'
+import HeroText from './components/HeroText'
 
 // 主应用内容组件
 const AppContent: React.FC = () => {
@@ -47,11 +48,65 @@ const AppContent: React.FC = () => {
 
   // 📍 页面加载时自动滚动到中心区域（第二个区域）
   useEffect(() => {
-    if (scrollContainerRef.current) {
-      // 滚动到中心区域（100vw的位置）
-      scrollContainerRef.current.scrollLeft = window.innerWidth;
-    }
+    const scrollToCenter = () => {
+      if (scrollContainerRef.current) {
+        // 滚动到中心区域（100vw的位置）
+        scrollContainerRef.current.scrollLeft = window.innerWidth;
+      }
+    };
+
+    // 立即执行一次
+    scrollToCenter();
+    
+    // 多次延迟执行，确保DOM完全加载和渲染
+    const timeoutIds = [
+      setTimeout(scrollToCenter, 100),
+      setTimeout(scrollToCenter, 300),
+      setTimeout(scrollToCenter, 500)
+    ];
+    
+    // 监听窗口大小变化，确保始终居中
+    const handleResize = () => {
+      scrollToCenter();
+    };
+    
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      timeoutIds.forEach(id => clearTimeout(id));
+      window.removeEventListener('resize', handleResize);
+    };
   }, []); // 只在组件挂载时执行一次
+
+  // 📍 额外的滚动确保 - 处理页面刷新和路由变化
+  useEffect(() => {
+    // 页面可见时确保滚动到中心
+    const handleVisibilityChange = () => {
+      if (!document.hidden && scrollContainerRef.current) {
+        setTimeout(() => {
+          if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollLeft = window.innerWidth;
+          }
+        }, 50);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // 页面焦点时也确保滚动
+    const handleFocus = () => {
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollLeft = window.innerWidth;
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, []);
 
   return (
     <div style={{ minHeight: '100vh', position: 'relative', overflow: 'hidden' }}>
@@ -520,17 +575,7 @@ const AppContent: React.FC = () => {
             justifyContent: 'center',
             flexShrink: 0
           }}>
-            <h1 style={{ 
-              fontSize: '5rem', 
-              fontWeight: '900', 
-              color: 'white', 
-              textShadow: '4px 4px 16px rgba(0, 0, 0, 0.9)',
-              fontFamily: 'Montserrat, Inter, sans-serif',
-              letterSpacing: '-0.03em',
-              margin: 0
-            }}>
-              Welcome
-            </h1>
+            <HeroText />
           </div>
 
           {/* 右侧卡片区域 - 实际内容 */}

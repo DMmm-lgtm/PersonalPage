@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Caveat:wght@400;700&family=Dancing+Script:wght@400;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -726,5 +727,76 @@ button:focus-visible {
   }
   button {
     background-color: #f9f9f9;
+  }
+}
+
+/* 漂浮框动画 - 中等速度飘动 */
+@keyframes floatingMove {
+  0% {
+    transform: translate(-50%, -50%) translateX(-200px) translateY(-100px);
+  }
+  10% {
+    transform: translate(-50%, -50%) translateX(-150px) translateY(-80px);
+  }
+  20% {
+    transform: translate(-50%, -50%) translateX(-100px) translateY(-60px);
+  }
+  30% {
+    transform: translate(-50%, -50%) translateX(-50px) translateY(-40px);
+  }
+  40% {
+    transform: translate(-50%, -50%) translateX(0px) translateY(-20px);
+  }
+  50% {
+    transform: translate(-50%, -50%) translateX(50px) translateY(0px);
+  }
+  60% {
+    transform: translate(-50%, -50%) translateX(100px) translateY(20px);
+  }
+  70% {
+    transform: translate(-50%, -50%) translateX(150px) translateY(40px);
+  }
+  80% {
+    transform: translate(-50%, -50%) translateX(200px) translateY(60px);
+  }
+  90% {
+    transform: translate(-50%, -50%) translateX(180px) translateY(80px);
+  }
+  100% {
+    transform: translate(-50%, -50%) translateX(-200px) translateY(-100px);
+  }
+}
+
+/* 字母粉碎消失动画 */
+@keyframes letterDestroy {
+  0% {
+    transform: scale(1) translateX(0) rotate(0deg);
+    opacity: 1;
+    filter: blur(0px);
+  }
+  20% {
+    transform: scale(1.2) translateX(-10px) rotate(-5deg);
+    opacity: 0.8;
+    filter: blur(0.5px);
+  }
+  40% {
+    transform: scale(1.5) translateX(-20px) rotate(-10deg);
+    opacity: 0.6;
+    filter: blur(1px);
+  }
+  60% {
+    transform: scale(1.8) translateX(-30px) rotate(-15deg);
+    opacity: 0.4;
+    filter: blur(2px);
+  }
+  80% {
+    transform: scale(2.2) translateX(-40px) rotate(-20deg);
+    opacity: 0.2;
+    filter: blur(3px);
+  }
+  100% {
+    transform: scale(2.5) translateX(-50px) rotate(-25deg);
+    opacity: 0;
+    filter: blur(4px);
   }
 }
