@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useRef } from 'react'
+import { useMemo, useEffect, useRef, useState } from 'react'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 import ThemeToggle from './components/ThemeToggle'
 import RightContent from './components/RightContent'
@@ -9,6 +9,8 @@ import HeroText from './components/HeroText'
 const AppContent: React.FC = () => {
   const { theme } = useTheme()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const [heroPhase, setHeroPhase] = useState<'waiting' | 'typing' | 'holding' | 'deleting' | 'complete'>('waiting')
+  const [showJerboa, setShowJerboa] = useState(false)
   
   // 🚀 性能优化：缓存粒子数据，避免每次渲染都重新计算随机值
   const particleSequences = useMemo(() => {
@@ -140,6 +142,18 @@ const AppContent: React.FC = () => {
       console.log('- 窗口宽度:', window.innerWidth);
       console.log('- 容器总宽度:', element.scrollWidth);
       console.log('- 容器可见宽度:', element.clientWidth);
+    }
+  };
+
+  // 处理HeroText阶段变化
+  const handleHeroPhaseChange = (phase: 'waiting' | 'typing' | 'holding' | 'deleting' | 'complete') => {
+    setHeroPhase(phase)
+    
+    // 当HeroText完成时，延迟显示jerboa
+    if (phase === 'complete') {
+      setTimeout(() => {
+        setShowJerboa(true)
+      }, 2000) // 延迟2秒后显示jerboa
     }
   };
 
@@ -587,6 +601,34 @@ const AppContent: React.FC = () => {
         </div>
         </div>
 
+        {/* Jerboa图标 - 从沙丘中淡出 */}
+        {showJerboa && (
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '25%',
+              left: '60%',
+              zIndex: 15,
+              animation: 'jerboaEmergeFromSand 3s ease-out forwards',
+              willChange: 'transform, opacity',
+              backfaceVisibility: 'hidden'
+            }}
+          >
+            <img
+              src="/jerboa.svg"
+              alt="Jerboa"
+              style={{
+                width: '6rem',
+                height: '6rem',
+                filter: theme === 'dark' 
+                  ? 'drop-shadow(0 0 12px rgba(0, 255, 255, 0.4))' 
+                  : 'drop-shadow(0 0 12px rgba(0, 0, 0, 0.4))',
+                transition: 'filter 1s ease'
+              }}
+            />
+          </div>
+        )}
+
         {/* 内容层 - 在背景之上 */}
         {/* 主页面 - 直接显示中间页面，从上方加载 */}
         <div style={{
@@ -598,7 +640,7 @@ const AppContent: React.FC = () => {
           justifyContent: 'center',
           zIndex: 10
         }}>
-          <HeroText />
+          <HeroText onPhaseChange={handleHeroPhaseChange} />
         </div>
       </div>
       

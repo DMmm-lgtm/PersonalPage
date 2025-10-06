@@ -70,7 +70,12 @@ const Letter: React.FC<LetterProps> = ({ char, isVisible, isDestroying, destroyD
   )
 }
 
-const HeroText: React.FC = () => {
+interface HeroTextProps {
+  onComplete?: () => void
+  onPhaseChange?: (phase: 'waiting' | 'typing' | 'holding' | 'deleting' | 'complete') => void
+}
+
+const HeroText: React.FC<HeroTextProps> = ({ onComplete, onPhaseChange }) => {
   const [visibleLetters, setVisibleLetters] = useState<boolean[]>([])
   const [destroyingLetters, setDestroyingLetters] = useState<boolean[]>([])
   const [showCursor, setShowCursor] = useState(true)
@@ -78,9 +83,9 @@ const HeroText: React.FC = () => {
   
   const fullText = 'Welcome\u00A0to\u00A0621\u00A0Space'
   const letters = fullText.split('')
-  const typingSpeed = 200 // 每秒5个字母 = 200毫秒/字母
-  const holdTime = 8000 // 保持8秒，让晃动更慢
-  const wordPause = 600 // 单词间间隔0.6秒
+  const typingSpeed = 100 // 每秒10个字母 = 100毫秒/字母
+  const holdTime = 6000 // 保持8秒，让晃动更慢
+  const wordPause = 400 // 单词间间隔0.6秒
   const destroyDelay = 50 // 每个字母粉碎间隔50ms
 
   // 初始化字母状态
@@ -95,6 +100,13 @@ const HeroText: React.FC = () => {
     
     return () => clearTimeout(startTypingTimer)
   }, [])
+
+  // 通知父组件阶段变化
+  useEffect(() => {
+    if (onPhaseChange) {
+      onPhaseChange(currentPhase)
+    }
+  }, [currentPhase, onPhaseChange])
 
 
   useEffect(() => {
@@ -145,6 +157,10 @@ const HeroText: React.FC = () => {
       // 1秒后完成
       timeoutId = setTimeout(() => {
         setCurrentPhase('complete')
+        // 触发完成回调
+        if (onComplete) {
+          onComplete()
+        }
       }, 1000)
     }
 
