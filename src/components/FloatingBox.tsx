@@ -32,7 +32,7 @@ const FloatingBox: React.FC = () => {
         backfaceVisibility: 'hidden',
         cursor: 'pointer',
         transition: 'all 0.3s ease',
-        userSelect: 'none',
+        userSelect: 'none'
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.transform = 'translate(-50%, -50%) scale(1.1)'

@@ -261,6 +261,7 @@ const LeftGallery: React.FC = () => {
         if (!files.length) {
           console.log('Supabase: 根目录与 gallery/ 均无文件')
           ;(window as any).__GALLERY_URLS__ = []
+          ;(window as any).GALLERY_URLS = []
           return
         }
 
@@ -296,6 +297,7 @@ const LeftGallery: React.FC = () => {
 
         // 保持长度为9的数组，对应占位 id 1..9
         ;(window as any).__GALLERY_URLS__ = urls
+        ;(window as any).GALLERY_URLS = urls
       } catch (e: any) {
         if (!active) return
         setError(e?.message ?? '未知错误')

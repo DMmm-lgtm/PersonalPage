@@ -94,11 +94,11 @@ const HeroText: React.FC<HeroTextProps> = ({ onComplete, onPhaseChange }) => {
     setDestroyingLetters(new Array(letters.length).fill(false))
     
     // 延迟1秒后开始打字效果
-    const startTypingTimer = setTimeout(() => {
+    const startTypingTimer = window.setTimeout(() => {
       setCurrentPhase('typing')
     }, 1000)
     
-    return () => clearTimeout(startTypingTimer)
+    return () => window.clearTimeout(startTypingTimer)
   }, [])
 
   // 通知父组件阶段变化
@@ -110,7 +110,7 @@ const HeroText: React.FC<HeroTextProps> = ({ onComplete, onPhaseChange }) => {
 
 
   useEffect(() => {
-    let timeoutId: ReturnType<typeof setTimeout>
+    let timeoutId: number | undefined
 
     if (currentPhase === 'typing') {
       const currentIndex = visibleLetters.filter(Boolean).length
@@ -132,7 +132,7 @@ const HeroText: React.FC<HeroTextProps> = ({ onComplete, onPhaseChange }) => {
           delay = wordPause
         }
         
-        timeoutId = setTimeout(() => {
+        timeoutId = window.setTimeout(() => {
           setVisibleLetters(prev => {
             const newVisible = [...prev]
             newVisible[currentIndex] = true
@@ -141,13 +141,13 @@ const HeroText: React.FC<HeroTextProps> = ({ onComplete, onPhaseChange }) => {
         }, delay)
       } else {
         // 打字完成，开始保持
-        timeoutId = setTimeout(() => {
+        timeoutId = window.setTimeout(() => {
           setCurrentPhase('holding')
         }, typingSpeed)
       }
     } else if (currentPhase === 'holding') {
       // 保持10秒
-      timeoutId = setTimeout(() => {
+      timeoutId = window.setTimeout(() => {
         setCurrentPhase('deleting')
       }, holdTime)
     } else if (currentPhase === 'deleting') {
@@ -155,7 +155,7 @@ const HeroText: React.FC<HeroTextProps> = ({ onComplete, onPhaseChange }) => {
       setDestroyingLetters(new Array(letters.length).fill(true))
       
       // 1秒后完成
-      timeoutId = setTimeout(() => {
+      timeoutId = window.setTimeout(() => {
         setCurrentPhase('complete')
         // 触发完成回调
         if (onComplete) {
@@ -165,8 +165,8 @@ const HeroText: React.FC<HeroTextProps> = ({ onComplete, onPhaseChange }) => {
     }
 
     return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId)
+      if (timeoutId !== undefined) {
+        window.clearTimeout(timeoutId)
       }
     }
   }, [visibleLetters, currentPhase])
@@ -194,11 +194,11 @@ const HeroText: React.FC<HeroTextProps> = ({ onComplete, onPhaseChange }) => {
       return
     }
     
-    const cursorInterval = setInterval(() => {
+    const cursorInterval = window.setInterval(() => {
       setShowCursor(prev => !prev)
     }, 500)
 
-    return () => clearInterval(cursorInterval)
+    return () => window.clearInterval(cursorInterval)
   }, [currentPhase, visibleLetters, letters])
 
   return (
