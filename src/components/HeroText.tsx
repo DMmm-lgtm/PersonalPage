@@ -21,15 +21,15 @@ const Letter: React.FC<LetterProps> = ({ char, isVisible, isDestroying, destroyD
     if (!isWobbling) return 'none'
     
     // 计算当前字母的实际保持时间
-    const holdTime = 5000 // 整体保持5秒
+    const holdTime = 8000 // 整体保持8秒，让晃动更慢
     const leftWobbleTime = 0 // 取消向左移动，持续随机晃动
     const destroyDelay = 50 // 每个字母消失间隔50ms
     
     // 当前字母的晃动时长 = 总保持时间 - 当前字母的延迟 - 向左晃动时间
     const wobbleDuration = holdTime - (letterIndex * destroyDelay) - leftWobbleTime
     
-    // 确保晃动时间至少为1秒
-    const actualDuration = Math.max(wobbleDuration, 1000)
+    // 确保晃动时间至少为2秒，让晃动更慢
+    const actualDuration = Math.max(wobbleDuration, 2000)
     
     // 使用字符的charCode来生成一致的随机数
     const charCode = char.charCodeAt(0)
@@ -74,12 +74,12 @@ const HeroText: React.FC = () => {
   const [visibleLetters, setVisibleLetters] = useState<boolean[]>([])
   const [destroyingLetters, setDestroyingLetters] = useState<boolean[]>([])
   const [showCursor, setShowCursor] = useState(true)
-  const [currentPhase, setCurrentPhase] = useState<'typing' | 'holding' | 'deleting' | 'complete'>('typing')
+  const [currentPhase, setCurrentPhase] = useState<'waiting' | 'typing' | 'holding' | 'deleting' | 'complete'>('waiting')
   
   const fullText = 'Welcome\u00A0to\u00A0621\u00A0Space'
   const letters = fullText.split('')
   const typingSpeed = 200 // 每秒5个字母 = 200毫秒/字母
-  const holdTime = 5000 // 保持5秒
+  const holdTime = 8000 // 保持8秒，让晃动更慢
   const wordPause = 600 // 单词间间隔0.6秒
   const destroyDelay = 50 // 每个字母粉碎间隔50ms
 
@@ -87,7 +87,15 @@ const HeroText: React.FC = () => {
   useEffect(() => {
     setVisibleLetters(new Array(letters.length).fill(false))
     setDestroyingLetters(new Array(letters.length).fill(false))
+    
+    // 延迟1秒后开始打字效果
+    const startTypingTimer = setTimeout(() => {
+      setCurrentPhase('typing')
+    }, 1000)
+    
+    return () => clearTimeout(startTypingTimer)
   }, [])
+
 
   useEffect(() => {
     let timeoutId: number
@@ -163,6 +171,13 @@ const HeroText: React.FC = () => {
       return
     }
     
+    // 检查当前要显示的字符是否是空格，如果是空格则不显示光标
+    const currentChar = letters[visibleCount]
+    if (currentChar === '\u00A0' || currentChar === ' ') {
+      setShowCursor(false) // 输入空格时不显示光标
+      return
+    }
+    
     const cursorInterval = setInterval(() => {
       setShowCursor(prev => !prev)
     }, 500)
@@ -215,6 +230,10 @@ const HeroText: React.FC = () => {
         const isTypingLastLetter = visibleCount === letters.length - 1 && letters[letters.length - 1] === 'e'
         
         if (isTypingLastLetter) return null
+        
+        // 检查当前要显示的字符是否是空格，如果是空格则不渲染光标
+        const currentChar = letters[visibleCount]
+        if (currentChar === '\u00A0' || currentChar === ' ') return null
         
         return (
           <span 

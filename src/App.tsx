@@ -46,140 +46,98 @@ const AppContent: React.FC = () => {
     return animations[Math.floor(Math.random() * animations.length)];
   }, []); // 只在组件挂载时随机选择一次
 
-  // 📍 页面加载时自动滚动到中心区域（第二个区域 - Welcome 621 Space）
-  useEffect(() => {
-    const scrollToCenter = () => {
-      if (scrollContainerRef.current) {
-        // 滚动到第二个区域（Welcome 621 Space页面）
-        // 第一个区域：0vw，第二个区域：100vw，第三个区域：200vw
-        const targetScroll = window.innerWidth;
-        scrollContainerRef.current.scrollLeft = targetScroll;
-        console.log('主滚动逻辑 - 目标位置:', targetScroll, '实际位置:', scrollContainerRef.current.scrollLeft);
-      }
-    };
+  // 📍 页面直接显示中间区域，不需要滚动
+  // 注释掉自动滚动逻辑，直接显示中间页面
 
-    // 立即执行一次
-    scrollToCenter();
+  // 📍 注释掉额外的滚动确保逻辑
+  // useEffect(() => {
+  //   // 页面可见时确保滚动到中心
+  //   const handleVisibilityChange = () => {
+  //     if (!document.hidden && scrollContainerRef.current) {
+  //       setTimeout(() => {
+  //         if (scrollContainerRef.current) {
+  //           scrollContainerRef.current.scrollLeft = window.innerWidth;
+  //         }
+  //       }, 50);
+  //     }
+  //   };
+
+  //   document.addEventListener('visibilitychange', handleVisibilityChange);
     
-    // 多次延迟执行，确保DOM完全加载和渲染
-    const timeoutIds = [
-      setTimeout(scrollToCenter, 50),
-      setTimeout(scrollToCenter, 100),
-      setTimeout(scrollToCenter, 200),
-      setTimeout(scrollToCenter, 500),
-      setTimeout(scrollToCenter, 1000)
-    ];
+  //   // 页面焦点时也确保滚动
+  //   const handleFocus = () => {
+  //     if (scrollContainerRef.current) {
+  //       scrollContainerRef.current.scrollLeft = window.innerWidth;
+  //     }
+  //   };
+
+  //   window.addEventListener('focus', handleFocus);
+
+  //   return () => {
+  //     document.removeEventListener('visibilitychange', handleVisibilityChange);
+  //     window.removeEventListener('focus', handleFocus);
+  //   };
+  // }, []);
+
+  // 📍 注释掉强制滚动逻辑，直接显示中间页面
+  // useEffect(() => {
+  //   // 使用requestAnimationFrame确保DOM完全渲染后执行
+  //   const forceScrollToWelcome = () => {
+  //     if (scrollContainerRef.current) {
+  //       // 强制滚动到第二个区域（Welcome 621 Space页面）
+  //       const targetScroll = window.innerWidth;
+  //       scrollContainerRef.current.scrollLeft = targetScroll;
+  //       console.log('强制滚动到:', targetScroll, '当前滚动位置:', scrollContainerRef.current.scrollLeft);
+  //     }
+  //   };
+
+  //   // 立即执行
+  //   forceScrollToWelcome();
     
-    // 监听窗口大小变化，确保始终居中
-    const handleResize = () => {
-      scrollToCenter();
-    };
-    
-    window.addEventListener('resize', handleResize);
+  //   // 使用requestAnimationFrame确保在下一帧执行
+  //   requestAnimationFrame(() => {
+  //     forceScrollToWelcome();
+  //   });
 
-    return () => {
-      timeoutIds.forEach(id => clearTimeout(id));
-      window.removeEventListener('resize', handleResize);
-    };
-  }, []); // 只在组件挂载时执行一次
+  //   // 多次延迟执行，确保滚动生效
+  //   const timeouts = [
+  //     setTimeout(forceScrollToWelcome, 100),
+  //     setTimeout(forceScrollToWelcome, 300),
+  //     setTimeout(forceScrollToWelcome, 500),
+  //     setTimeout(forceScrollToWelcome, 1000),
+  //     setTimeout(forceScrollToWelcome, 2000)
+  //   ];
 
-  // 📍 额外的滚动确保 - 处理页面刷新和路由变化
-  useEffect(() => {
-    // 页面可见时确保滚动到中心
-    const handleVisibilityChange = () => {
-      if (!document.hidden && scrollContainerRef.current) {
-        setTimeout(() => {
-          if (scrollContainerRef.current) {
-            scrollContainerRef.current.scrollLeft = window.innerWidth;
-          }
-        }, 50);
-      }
-    };
+  //   // 页面完全加载后执行
+  //   const handleLoad = () => {
+  //     forceScrollToWelcome();
+  //   };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    // 页面焦点时也确保滚动
-    const handleFocus = () => {
-      if (scrollContainerRef.current) {
-        scrollContainerRef.current.scrollLeft = window.innerWidth;
-      }
-    };
+  //   if (document.readyState === 'complete') {
+  //     forceScrollToWelcome();
+  //   } else {
+  //     window.addEventListener('load', handleLoad);
+  //   }
 
-    window.addEventListener('focus', handleFocus);
+  //   return () => {
+  //     timeouts.forEach(clearTimeout);
+  //     window.removeEventListener('load', handleLoad);
+  //   };
+  // }, []);
 
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleFocus);
-    };
-  }, []);
-
-  // 📍 强制滚动到Welcome 621 Space页面 - 确保首次加载和刷新都显示正确页面
-  useEffect(() => {
-    // 使用requestAnimationFrame确保DOM完全渲染后执行
-    const forceScrollToWelcome = () => {
-      if (scrollContainerRef.current) {
-        // 强制滚动到第二个区域（Welcome 621 Space页面）
-        const targetScroll = window.innerWidth;
-        scrollContainerRef.current.scrollLeft = targetScroll;
-        console.log('强制滚动到:', targetScroll, '当前滚动位置:', scrollContainerRef.current.scrollLeft);
-      }
-    };
-
-    // 立即执行
-    forceScrollToWelcome();
-    
-    // 使用requestAnimationFrame确保在下一帧执行
-    requestAnimationFrame(() => {
-      forceScrollToWelcome();
-    });
-
-    // 多次延迟执行，确保滚动生效
-    const timeouts = [
-      setTimeout(forceScrollToWelcome, 100),
-      setTimeout(forceScrollToWelcome, 300),
-      setTimeout(forceScrollToWelcome, 500),
-      setTimeout(forceScrollToWelcome, 1000),
-      setTimeout(forceScrollToWelcome, 2000)
-    ];
-
-    // 页面完全加载后执行
-    const handleLoad = () => {
-      forceScrollToWelcome();
-    };
-
-    if (document.readyState === 'complete') {
-      forceScrollToWelcome();
-    } else {
-      window.addEventListener('load', handleLoad);
-    }
-
-    return () => {
-      timeouts.forEach(clearTimeout);
-      window.removeEventListener('load', handleLoad);
-    };
-  }, []);
-
-  // 📍 组件渲染后立即强制滚动
+  // 📍 组件渲染后设置引用，不强制滚动
   const handleScrollContainerRef = (element: HTMLDivElement | null) => {
     if (element) {
       scrollContainerRef.current = element;
       
-      // 强制滚动到Welcome页面（第二个区域）
-      const targetScroll = window.innerWidth;
-      
-      // 立即设置滚动位置
-      element.scrollLeft = targetScroll;
-      
-      // 强制重新计算布局
-      element.offsetHeight;
-      
-      // 再次设置滚动位置
-      element.scrollLeft = targetScroll;
+      // 注释掉强制滚动逻辑，直接显示中间页面
+      // const targetScroll = window.innerWidth;
+      // element.scrollLeft = targetScroll;
+      // element.offsetHeight;
+      // element.scrollLeft = targetScroll;
       
       console.log('容器引用设置:');
       console.log('- 窗口宽度:', window.innerWidth);
-      console.log('- 目标滚动位置:', targetScroll);
-      console.log('- 实际滚动位置:', element.scrollLeft);
       console.log('- 容器总宽度:', element.scrollWidth);
       console.log('- 容器可见宽度:', element.clientWidth);
     }
@@ -187,21 +145,19 @@ const AppContent: React.FC = () => {
 
   return (
     <div style={{ minHeight: '100vh', position: 'relative', overflow: 'hidden' }}>
-      {/* 水平滚动容器 - 超大画布 */}
+      {/* 主页面容器 - 直接显示，不需要滚动 */}
       <div 
         ref={handleScrollContainerRef}
         style={{ 
           position: 'relative', 
           zIndex: 10, 
-          overflowX: 'scroll', 
-          overflowY: 'hidden',
+          overflow: 'hidden',
           width: '100vw',
-          height: '100vh',
-          scrollBehavior: 'smooth'
+          height: '100vh'
         }}
       >
-        {/* Journey风格背景 - 跟随滚动移动 */}
-        <div style={{ position: 'absolute', top: 0, left: 0, width: '300vw', height: '100%', zIndex: 1 }}>
+        {/* Journey风格背景 - 单页面背景 */}
+        <div style={{ position: 'absolute', top: 0, left: 0, width: '100vw', height: '100%', zIndex: 1 }}>
         {/* 主背景层 - 清晨沙漠色调 */}
         <div 
           style={{
@@ -632,33 +588,17 @@ const AppContent: React.FC = () => {
         </div>
 
         {/* 内容层 - 在背景之上 */}
-        <div style={{ 
+        {/* 主页面 - 直接显示中间页面，从上方加载 */}
+        <div style={{
           position: 'relative',
-          display: 'flex', 
-          width: '300vw', 
+          width: '100vw',
           height: '100vh',
-          flexDirection: 'row',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
           zIndex: 10
         }}>
-          
-          {/* 左侧画廊区域 - 实际内容 */}
-          <LeftGallery />
-
-          {/* 中心/入口区域 - 欢迎页 */}
-          <div style={{ 
-            width: '100vw', 
-            height: '100vh',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0
-          }}>
-            <HeroText />
-          </div>
-
-          {/* 右侧卡片区域 - 实际内容 */}
-          <RightContent />
-
+          <HeroText />
         </div>
       </div>
       
