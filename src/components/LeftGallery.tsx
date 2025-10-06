@@ -9,31 +9,17 @@ interface ImagePlaceholder {
   aspectRatio: string
 }
 
-// 16个图片占位数据 - 不同大小和比例
+// 9个图片占位数据 - 统一的3x3网格布局
 const imagePlaceholders: ImagePlaceholder[] = [
-  // 第一行 - 大尺寸图片
-  { id: 1, width: 'w-full', height: 'h-80', aspectRatio: 'aspect-[4/3]' },
-  { id: 2, width: 'w-2/3', height: 'h-60', aspectRatio: 'aspect-[3/2]' },
-  { id: 3, width: 'w-1/2', height: 'h-72', aspectRatio: 'aspect-[2/3]' },
-  { id: 4, width: 'w-3/4', height: 'h-48', aspectRatio: 'aspect-[3/2]' },
-  
-  // 第二行 - 中等尺寸图片
-  { id: 5, width: 'w-1/3', height: 'h-56', aspectRatio: 'aspect-[1/2]' },
-  { id: 6, width: 'w-2/3', height: 'h-40', aspectRatio: 'aspect-[3/2]' },
-  { id: 7, width: 'w-1/2', height: 'h-64', aspectRatio: 'aspect-[2/3]' },
-  { id: 8, width: 'w-3/4', height: 'h-52', aspectRatio: 'aspect-[3/2]' },
-  
-  // 第三行 - 混合尺寸
-  { id: 9, width: 'w-full', height: 'h-44', aspectRatio: 'aspect-[4/3]' },
-  { id: 10, width: 'w-1/2', height: 'h-68', aspectRatio: 'aspect-[2/3]' },
-  { id: 11, width: 'w-2/3', height: 'h-36', aspectRatio: 'aspect-[3/2]' },
-  { id: 12, width: 'w-1/3', height: 'h-60', aspectRatio: 'aspect-[1/2]' },
-  
-  // 第四行 - 小尺寸图片
-  { id: 13, width: 'w-1/4', height: 'h-40', aspectRatio: 'aspect-[1/2]' },
-  { id: 14, width: 'w-1/2', height: 'h-48', aspectRatio: 'aspect-[2/3]' },
-  { id: 15, width: 'w-2/3', height: 'h-44', aspectRatio: 'aspect-[3/2]' },
-  { id: 16, width: 'w-1/3', height: 'h-52', aspectRatio: 'aspect-[1/2]' }
+  { id: 1, width: 'w-full', height: 'h-48', aspectRatio: 'aspect-square' },
+  { id: 2, width: 'w-full', height: 'h-48', aspectRatio: 'aspect-square' },
+  { id: 3, width: 'w-full', height: 'h-48', aspectRatio: 'aspect-square' },
+  { id: 4, width: 'w-full', height: 'h-48', aspectRatio: 'aspect-square' },
+  { id: 5, width: 'w-full', height: 'h-48', aspectRatio: 'aspect-square' },
+  { id: 6, width: 'w-full', height: 'h-48', aspectRatio: 'aspect-square' },
+  { id: 7, width: 'w-full', height: 'h-48', aspectRatio: 'aspect-square' },
+  { id: 8, width: 'w-full', height: 'h-48', aspectRatio: 'aspect-square' },
+  { id: 9, width: 'w-full', height: 'h-48', aspectRatio: 'aspect-square' }
 ]
 
 // 单个图片占位组件
@@ -120,8 +106,6 @@ const ImagePlaceholder: React.FC<{ placeholder: ImagePlaceholder }> = ({ placeho
 }
 
 const LeftGallery: React.FC = () => {
-  const { theme } = useTheme()
-
   return (
     <div style={{ 
       width: '100vw', 
@@ -133,42 +117,9 @@ const LeftGallery: React.FC = () => {
       padding: '2rem',
       boxSizing: 'border-box'
     }}>
-      {/* 照片墙容器 */}
-      <div 
-        className="w-full h-full max-w-6xl max-h-[800px] p-4"
-        style={{
-          backgroundColor: theme === 'dark' 
-            ? 'rgba(0, 0, 0, 0.2)' 
-            : 'rgba(255, 255, 255, 0.1)',
-          borderRadius: '16px',
-          backdropFilter: 'blur(12px)',
-          border: `1px solid ${theme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'}`
-        }}
-      >
-        {/* 标题 */}
-        <div className="text-center mb-6">
-          <h2 
-            className="text-3xl font-bold mb-2"
-            style={{
-              color: theme === 'dark' ? 'white' : '#1f2937',
-              fontFamily: 'Inter, sans-serif'
-            }}
-          >
-            📸 照片墙
-          </h2>
-          <p 
-            className="text-sm opacity-60"
-            style={{
-              color: theme === 'dark' ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)',
-              fontFamily: 'Fira Code, monospace'
-            }}
-          >
-            16个不同尺寸的图片占位 - 悬停放大
-          </p>
-        </div>
-
-        {/* 不规则网格布局 */}
-        <div className="grid grid-cols-4 gap-4 h-full overflow-y-auto">
+      {/* 简化的3x3网格布局 */}
+      <div className="w-full h-full max-w-4xl max-h-[600px] p-4">
+        <div className="grid grid-cols-3 gap-4 h-full">
           {imagePlaceholders.map((placeholder) => (
             <ImagePlaceholder
               key={placeholder.id}
