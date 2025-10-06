@@ -1,0 +1,103 @@
+---
+description: Styling and CSS guidelines
+globs: *.tsx,*.css,tailwind.config.js
+---
+
+# 样式规范指南
+
+## 样式策略
+
+### 何时使用内联样式
+对于复杂的动态样式，**必须使用内联style属性**：
+- 动画相关样式（animation, transform）
+- 依赖theme变量的样式
+- 需要精确控制的布局（position, z-index）
+- SVG相关样式
+
+**原因**: 避免Tailwind JIT编译或类名purge导致的样式丢失
+
+### 何时使用Tailwind类
+- 静态的、不变的样式
+- 简单的布局类（flex, grid）
+- 标准的间距、颜色
+
+## Tailwind配置
+
+### 主色调系统
+```javascript
+colors: {
+  primary: {
+    DEFAULT: '#00FFFF', // 电光蓝
+    light: '#33FFFF',
+    dark: '#00CCCC',
+  },
+  secondary: {
+    DEFAULT: '#000000',
+    light: '#333333',
+  },
+  accent: '#FFFFFF',
+}
+```
+
+### 字体系统
+- `font-display`: Inter (标题字体)
+- `font-mono`: Fira Code (等宽字体)
+
+### Dark Mode
+配置为 `darkMode: 'class'`，通过ThemeContext管理
+
+## CSS动画规范
+
+### 文件位置
+所有`@keyframes`定义必须在 [src/index.css](mdc:src/index.css)
+
+### 命名约定
+- 粒子动画: 小写驼峰（pulse, float, twinkle）
+- 光芒动画: glow + 速度修饰（glow, glowSlow, glowSlowest）
+- 沙漠动画: desertColorBreath + 方向（Left, Diagonal）
+- 波浪动画: waveFloat + 数字（waveFloat1, waveFloat2）
+
+### 性能属性
+所有动画元素必须包含：
+```css
+will-change: transform, opacity;
+backface-visibility: hidden;
+```
+
+## SVG规范
+
+### viewBox标准化
+- 沙漠层: `viewBox="0 0 1440 400"`
+- 使用 `preserveAspectRatio="none"` 拉伸填充
+
+### 渐变ID命名
+- 沙丘渐变: `gradient1`, `gradient2`, `gradient3`, `gradient4`
+- 呼吸渐变: `desertBreathGradient-{动画名}`
+
+### 路径坐标
+使用三次贝塞尔曲线（C命令）创建平滑波浪：
+```
+C x1,y1 x2,y2 x,y
+```
+
+## 颜色规范
+
+### 沙漠色系
+- 基础沙色: rgb(222, 184, 135)
+- 深沙色: rgb(205, 133, 63)
+- 浅沙色: rgb(210, 180, 140)
+- 红沙色: rgb(188, 143, 143)
+
+### 光芒色系
+- 主光芒: rgba(255, 248, 220, opacity)
+- 次光芒: rgba(255, 235, 205, opacity)
+- 辅光芒: rgba(255, 228, 181, opacity)
+
+### 山脉色系
+- rgba(139, 115, 85, 0.3-0.7)
+
+## 响应式考虑
+当前为桌面优先，未来需要考虑：
+- 移动端减少粒子数量
+- 移动端简化动画效果
+- 使用媒体查询调整布局

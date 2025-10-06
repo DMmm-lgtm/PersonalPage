@@ -1,0 +1,145 @@
+---
+description: Performance optimization best practices
+alwaysApply: true
+---
+
+# 性能优化最佳实践
+
+## React性能优化
+
+### useMemo使用规范
+**必须缓存的计算**:
+1. 粒子数据生成（150个粒子）
+2. 随机动画选择
+3. 复杂的数组映射
+
+```typescript
+// ✅ 正确 - 使用useMemo缓存
+const particleSequences = useMemo(() => {
+  // 昂贵的计算
+  return { seq1, seq2, seq3 };
+}, []); // 空依赖 - 只计算一次
+
+// ❌ 错误 - 每次渲染都重新计算
+const particles = [...Array(150)].map(() => ({
+  random: Math.random() // 这会导致粒子不断闪烁！
+}));
+```
+
+### 避免的反模式
+1. 不要在JSX中直接调用Math.random()
+2. 不要在map中生成随机值
+3. 不要在每次渲染时创建新的内联函数（除非必要）
+
+## CSS性能优化
+
+### GPU加速（必须）
+所有动画元素必须添加：
+```css
+will-change: transform, opacity;
+backface-visibility: hidden;
+perspective: 1000; /* 对于3D变换 */
+```
+
+### CSS Containment
+容器元素使用：
+```css
+contain: layout style paint;
+```
+
+**作用**:
+- 限制布局计算范围
+- 限制样式重计算范围
+- 限制绘制区域
+
+### 避免昂贵的CSS属性
+1. ❌ 避免使用 `box-shadow` 动画（已优化为静态）
+2. ❌ 避免使用 `filter` 动画（只用于静态模糊）
+3. ✅ 优先使用 `transform` 和 `opacity`
+
+## 事件优化
+
+### 粒子容器
+```typescript
+{
+  pointerEvents: 'none' // 粒子不响应鼠标事件
+}
+```
+
+**性能提升**:
+- 减少事件监听器计算
+- 鼠标移动时不检查hit-testing
+- 提升整体交互流畅度
+
+## 渲染优化
+
+### Key值规范
+使用稳定的key值：
+```typescript
+// ✅ 正确 - 稳定的ID
+key={`particle-seq1-${particle.id}`}
+
+// ❌ 错误 - 不稳定的索引
+key={`particle-${i}`} // 索引可能变化
+```
+
+### 条件渲染
+对于大量元素，考虑：
+1. 虚拟滚动（未来如需列表）
+2. 懒加载（未来如需图片）
+3. 分批渲染（已实现：3个粒子序列）
+
+## 动画性能
+
+### 时长控制
+- 最短动画: 12秒（光芒）
+- 最长动画: 60秒（粒子）
+- 原因: 慢速动画减少计算频率
+
+### 缓动函数
+统一使用：
+```
+cubic-bezier(0.4, 0, 0.2, 1)
+```
+这是标准的ease-in-out曲线，性能已优化
+
+### 动画数量限制
+- 粒子: 最多150个
+- 光芒: 3层
+- 沙丘: 4层
+- 山脉: 5个
+
+**总计**: ~170个动画元素（已接近性能边界）
+
+## 内存优化
+
+### 避免内存泄漏
+1. useMemo使用空依赖数组
+2. 不创建临时大数组
+3. 不在渲染中创建新对象
+
+### 垃圾回收
+通过useMemo缓存减少临时对象创建：
+- 优化前: 每次渲染创建150个对象
+- 优化后: 只创建一次
+
+## 监控指标
+
+### 目标性能
+- **FPS**: 保持60fps
+- **内存**: 稳定，无明显增长
+- **CPU**: 低于30%使用率
+- **GPU**: 高效利用
+
+### 测试方法
+使用Chrome DevTools:
+1. Performance面板 - 查看帧率
+2. Memory面板 - 查看内存占用
+3. Layers面板 - 查看合成层数量
+4. Rendering - Frame Rendering Stats
+
+## 未来优化方向
+1. 考虑使用Web Worker处理粒子计算
+2. 考虑使用Canvas替代DOM元素（如果性能不足）
+3. 移动端减少粒子数量到50个
+4. 使用Intersection Observer延迟加载非视口内容

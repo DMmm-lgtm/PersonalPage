@@ -1,0 +1,30 @@
+---
+alwaysApply: true
+description: Project structure and technology stack
+---
+
+# 项目结构与技术栈
+
+## 项目概述
+这是一个个人数字地图网站项目，采用Journey（风之旅人）游戏的沙漠美学风格。
+
+## 技术栈
+- **框架**: React 18 + TypeScript
+- **构建工具**: Vite
+- **样式**: Tailwind CSS v4 + 内联样式
+- **主色调**: #00FFFF (电光蓝/青色)
+- **主题**: Dark Mode支持
+
+## 核心文件
+- [src/App.tsx](mdc:src/App.tsx) - 主应用组件，包含Journey风格背景和UI
+- [src/index.css](mdc:src/index.css) - 全局CSS，包含所有动画keyframes
+- [src/contexts/ThemeContext.tsx](mdc:src/contexts/ThemeContext.tsx) - 主题管理Context
+- [src/components/ThemeToggle.tsx](mdc:src/components/ThemeToggle.tsx) - 主题切换按钮组件
+- [tailwind.config.js](mdc:tailwind.config.js) - Tailwind配置
+- [postcss.config.js](mdc:postcss.config.js) - PostCSS配置（使用@tailwindcss/postcss）
+
+## 设计原则
+1. **性能优先**: 使用useMemo缓存计算结果，GPU加速动画
+2. **渐进式体验**: 粒子、光芒、沙漠颜色都有渐入渐出效果
+3. **随机性**: 粒子动画和沙漠渐变方向随机化
+4. **自然感**: 避免生硬的矩形边界，使用波浪形SVG路径

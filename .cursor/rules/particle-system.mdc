@@ -1,0 +1,88 @@
+---
+description: Particle system implementation guidelines
+globs: src/App.tsx
+---
+
+# 粒子系统实现规范
+
+## 系统架构
+
+### 粒子总数: 150个
+分为3个序列，错开淡入避免同时出现：
+- **序列1**: 50个粒子，0-5秒内随机淡入
+- **序列2**: 50个粒子，5-10秒内随机淡入
+- **序列3**: 50个粒子，10-15秒内随机淡入
+
+## 使用useMemo缓存（关键！）
+
+```typescript
+const particleSequences = useMemo(() => {
+  const animations = ['pulse', 'float', 'twinkle', 'gravityFall', 
+                     'windBlown', 'strongWind', 'fallAndRise'];
+  
+  const generateParticles = (count, baseDelay, delayRange) => {
+    return Array.from({ length: count }, (_, i) => ({
+      id: `${baseDelay}-${i}`,
+      randomAnim: animations[Math.floor(Math.random() * animations.length)],
+      fadeInDelay: baseDelay + Math.random() * delayRange,
+      duration: 20 + Math.random() * 40, // 20-60秒
+      size: 0.8 + Math.random() * 3,
+      opacity: 0.15 + Math.random() * 0.5,
+      left: Math.random() * 100,
+      top: Math.random() * 100,
+    }));
+  };
+  
+  return { seq1, seq2, seq3 };
+}, []); // 空依赖数组 - 只计算一次！
+```
+
+## 粒子参数规范
+
+### 尺寸范围
+- **size**: 0.8px - 3.8px
+- **boxShadow**: size * 2.5
+
+### 透明度
+- **opacity**: 0.15 - 0.65（随机基础值）
+- 叠加动画的透明度变化
+
+### 动画时长
+- **duration**: 20-60秒（确保慢速移动）
+- **fadeInDelay**: 根据序列不同（0-5s, 5-10s, 10-15s）
+- **animDelay**: fadeInDelay + 0-8秒随机延迟
+
+### 动画应用
+每个粒子使用双动画：
+```typescript
+animation: `particleFadeIn 2s ease-out ${fadeInDelay}s forwards, 
+           ${randomAnim} ${duration}s cubic-bezier(0.4, 0, 0.2, 1) ${animDelay}s infinite`
+```
+
+## 性能优化清单
+
+### 必须添加的样式属性
+```typescript
+{
+  willChange: 'transform, opacity',
+  opacity: 0, // 初始完全透明
+  backfaceVisibility: 'hidden',
+  perspective: 1000,
+}
+```
+
+### 容器优化
+```typescript
+{
+  contain: 'layout style paint',
+  pointerEvents: 'none',
+  overflow: 'hidden',
+}
+```
+
+## 禁止事项
+1. ❌ 不要在渲染时直接调用Math.random()生成粒子参数
+2. ❌ 不要使用没有淡入淡出的动画
+3. ❌ 不要创建超过150个粒子
+4. ❌ 不要使用动画时长小于20秒的粒子
+5. ❌ 不要忘记添加key值（使用particle.id）

@@ -1,0 +1,78 @@
+---
+description: Animation system guidelines and patterns
+globs: *.tsx,*.css
+---
+
+# 动画系统规范
+
+## 动画类型
+
+### 1. 粒子动画（150个粒子）
+**位置**: [src/index.css](mdc:src/index.css)
+
+#### 核心动画
+- `particleFadeIn` - 页面加载时粒子淡入
+- `pulse` - 脉动缩放+平移（带淡入淡出）
+- `float` - 旋转360°+弧形飘动
+- `twinkle` - 快速闪烁+跳跃
+
+#### 物理效果动画
+- `gravityFall` - 重力下降（淡入淡出）
+- `windBlown` - 被风吹起（先下后上）
+- `strongWind` - 强风快速上升
+- `fallAndRise` - 螺旋下降再上升
+
+#### 漂移动画（已废弃，不再使用）
+- `driftRightUp`, `driftLeftUp`, `driftSpiral`, `driftWave`
+
+### 2. 光芒动画（3层）
+- `glow` - 第一层核心光芒（12秒，横向20%摆动）
+- `glowSlow` - 第二层中间光芒（18秒，反向移动）
+- `glowSlowest` - 第三层外围光芒（25秒，最柔和）
+
+**关键特性**:
+- 横向移动范围: -40% ↔ -60% (20%摆动)
+- 缓进缓出: opacity从0.05到最亮再到0.05
+- 使用`translate(-50%, y)`保持居中
+
+### 3. 沙漠颜色呼吸（3种变体）
+- `desertColorBreath` - 向上渐变（to top）
+- `desertColorBreathLeft` - 横向渐变（to right）
+- `desertColorBreathDiagonal` - 对角线渐变（135deg）
+
+**颜色循环**: 淡红 → 棕黄 → 亮黄 → 暗黄 → 淡绿 → 回淡红
+**时长**: 30秒
+**关键帧**: 0%, 5%, 15%, 20%, 25%, 35%, 40%, 45%, 55%, 60%, 65%, 75%, 80%, 85%, 95%, 100%
+
+### 4. SVG沙丘波浪
+- `waveFloat1` - 16秒上下浮动
+- `waveFloat2` - 19秒上下+左右
+- `waveFloat3` - 22秒上下+左右
+- `waveFloat4` - 25秒上下浮动
+
+## 动画规范
+
+### 时长要求
+- 粒子动画: 20-60秒（每秒≤3px移动）
+- 光芒动画: 12-25秒
+- 沙漠颜色: 30秒
+- 沙丘波浪: 16-25秒
+
+### 淡入淡出规范
+所有循环动画必须在开始（0-10%）和结束（90-100%）加入渐入渐出：
+```css
+@keyframes example {
+  0% { opacity: 0.05; }   /* 渐入起点 */
+  10% { opacity: 0.4; }   /* 渐入完成 */
+  50% { opacity: 0.8; }   /* 最亮点 */
+  90% { opacity: 0.3; }   /* 渐出开始 */
+  100% { opacity: 0.05; } /* 渐出终点 */
+}
+```
+
+### 性能优化要求
+1. 使用`willChange: 'transform, opacity'`
+2. 添加`backfaceVisibility: 'hidden'`启用GPU加速
+3. 使用`cubic-bezier(0.4, 0, 0.2, 1)`缓动函数
+4. 粒子容器使用`contain: 'layout style paint'`
+5. 粒子使用`pointerEvents: 'none'`

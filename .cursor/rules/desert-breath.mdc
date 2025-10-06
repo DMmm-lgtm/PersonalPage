@@ -1,0 +1,124 @@
+---
+description: Desert breathing effect implementation
+globs: src/App.tsx,src/index.css
+---
+
+# 沙漠呼吸效果规范
+
+## 重要原则
+**必须使用SVG波浪形边界，不能使用矩形div！**
+
+## SVG实现（正确方式）
+
+### 波浪形路径
+```tsx
+<svg viewBox="0 0 1440 400" preserveAspectRatio="none">
+  <path 
+    d="M0,0 L0,400 L1440,400 L1440,0 
+       C1440,0 1380,10 1260,25 C1140,40 1020,55 900,60 
+       C780,65 660,60 540,50 C420,40 300,25 180,15 
+       C60,5 0,0 0,0 Z"
+    fill={`url(#desertBreathGradient-${desertAnimation})`}
+    style={{ animation: `${desertAnimation} 30s ease-in-out infinite` }}
+  />
+</svg>
+```
+
+**关键点**:
+- 顶部使用贝塞尔曲线创建波浪形
+- 与下方沙丘SVG层的形状协调
+- 不能有生硬的矩形边界
+
+## 随机渐变方向
+
+使用useMemo随机选择：
+```typescript
+const desertAnimation = useMemo(() => {
+  const animations = [
+    'desertColorBreath',      // 向上渐变
+    'desertColorBreathLeft',  // 横向渐变
+    'desertColorBreathDiagonal' // 对角线渐变
+  ];
+  return animations[Math.floor(Math.random() * animations.length)];
+}, []);
+```
+
+## 渐变定义
+
+### 三种SVG渐变
+```svg
+<!-- 向上渐变 -->
+<linearGradient id="desertBreathGradient-desertColorBreath" 
+                x1="0%" y1="100%" x2="0%" y2="0%">
+  <stop offset="0%" stopColor="transparent" />
+  <stop offset="50%" stopColor="currentColor" stopOpacity="0.2" />
+  <stop offset="100%" stopColor="currentColor" stopOpacity="0.4" />
+</linearGradient>
+
+<!-- 横向渐变 -->
+<linearGradient id="desertBreathGradient-desertColorBreathLeft" 
+                x1="0%" y1="0%" x2="100%" y2="0%">
+  <!-- 同上 -->
+</linearGradient>
+
+<!-- 对角线渐变 -->
+<linearGradient id="desertBreathGradient-desertColorBreathDiagonal" 
+                x1="0%" y1="100%" x2="100%" y2="0%">
+  <!-- 同上 -->
+</linearGradient>
+```
+
+## CSS动画规范
+
+### 颜色过渡点（12个关键帧）
+```css
+@keyframes desertColorBreath {
+  0%   { background: 淡红; opacity: 0.3; }   /* 渐入起点 */
+  5%   { background: 淡红; opacity: 0.8; }   /* 快速淡入 */
+  15%  { background: 过渡色1; opacity: 1; }
+  20%  { background: 棕黄; opacity: 1; }
+  25%  { background: 过渡色2; opacity: 0.9; }
+  35%  { background: 过渡色3; opacity: 0.85; }
+  40%  { background: 亮黄; opacity: 1; }     /* 最亮点 */
+  45%  { background: 过渡色4; opacity: 0.95; }
+  55%  { background: 过渡色5; opacity: 0.9; }
+  60%  { background: 暗黄; opacity: 1; }
+  65%  { background: 过渡色6; opacity: 0.95; }
+  75%  { background: 过渡色7; opacity: 0.85; }
+  80%  { background: 淡绿; opacity: 1; }
+  85%  { background: 过渡色8; opacity: 0.9; }
+  95%  { background: 过渡色9; opacity: 0.7; }  /* 渐出开始 */
+  100% { background: 淡红; opacity: 0.3; }   /* 渐出终点 */
+}
+```
+
+### 颜色值
+- 淡红: rgba(188, 143, 143, 0.4)
+- 棕黄: rgba(210, 180, 140, 0.4)
+- 亮黄: rgba(238, 232, 170, 0.4)
+- 暗黄: rgba(205, 133, 63, 0.4)
+- 淡绿: rgba(189, 183, 107, 0.4)
+
+## 层叠顺序
+```
+粒子层（最上）
+  ↓
+光芒层
+  ↓
+第4层沙丘SVG
+第3层沙丘SVG
+第2层沙丘SVG
+第1层沙丘SVG
+  ↓
+呼吸颜色层SVG ← 波浪形边界！
+  ↓
+远山层
+天空层
+主背景层（最下）
+```
+
+## 禁止事项
+1. ❌ 不要使用矩形div作为沙漠呼吸层
+2. ❌ 不要使用固定的渐变方向（必须随机）
+3. ❌ 不要省略渐入渐出的opacity变化
+4. ❌ 不要使用少于10个颜色关键帧
