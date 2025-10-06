@@ -87,26 +87,57 @@ const ImagePlaceholder: React.FC<{
           transition: 'box-shadow 0.3s ease, transform 0.3s ease'
         }}
       >
-        {/* 图片占位内容 */}
+        {/* 图片内容 */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center">
-            <div 
-              className="text-3xl mb-3 transition-all duration-300"
+          {placeholder.id <= 3 ? (
+            // 前3张图片显示真实图片
+            <img 
+              src={`/photo${placeholder.id}.png`} 
+              alt={`照片 ${placeholder.id}`}
+              className="w-full h-full object-cover"
               style={{
                 opacity: isTop ? 0.9 : 0.6,
-                transform: isHovered ? 'scale(1.1)' : 'scale(1)'
+                transform: isHovered ? 'scale(1.02)' : 'scale(1)',
+                transition: 'opacity 0.3s ease, transform 0.3s ease',
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                borderRadius: '0.5rem'
               }}
-            >
-              📷
-            </div>
-            <div 
-              className="text-sm font-mono font-medium transition-all duration-300"
-              style={{
-                color: theme === 'dark' ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)',
-                opacity: isTop ? 0.9 : 0.5
+              onError={(e) => {
+                // 如果图片加载失败，显示占位符
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                const fallback = target.nextElementSibling as HTMLElement;
+                if (fallback) fallback.style.display = 'flex';
               }}
-            >
-              图片 {placeholder.id}
+            />
+          ) : null}
+          
+          {/* 占位符内容（当没有图片或图片加载失败时显示） */}
+          <div 
+            className="absolute inset-0 flex items-center justify-center text-center"
+            style={{ display: placeholder.id <= 3 ? 'none' : 'flex' }}
+          >
+            <div>
+              <div 
+                className="text-3xl mb-3 transition-all duration-300"
+                style={{
+                  opacity: isTop ? 0.9 : 0.6,
+                  transform: isHovered ? 'scale(1.1)' : 'scale(1)'
+                }}
+              >
+                📷
+              </div>
+              <div 
+                className="text-sm font-mono font-medium transition-all duration-300"
+                style={{
+                  color: theme === 'dark' ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)',
+                  opacity: isTop ? 0.9 : 0.5
+                }}
+              >
+                图片 {placeholder.id}
+              </div>
             </div>
           </div>
         </div>

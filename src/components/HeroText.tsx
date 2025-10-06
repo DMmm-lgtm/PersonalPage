@@ -52,7 +52,7 @@ const HeroText: React.FC = () => {
   const [showCursor, setShowCursor] = useState(true)
   const [currentPhase, setCurrentPhase] = useState<'typing' | 'holding' | 'deleting' | 'complete'>('typing')
   
-  const fullText = 'Welcome\u00A0621\u00A0Space'
+  const fullText = 'Welcome\u00A0to\u00A0621\u00A0Space'
   const letters = fullText.split('')
   const typingSpeed = 300 // 每秒2个字母 = 500毫秒/字母
   const holdTime = 8000 // 保持10秒
