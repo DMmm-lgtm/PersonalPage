@@ -46,7 +46,7 @@ const ImagePlaceholder: React.FC<{
 
   return (
     <div
-      className="absolute overflow-hidden rounded-lg cursor-pointer"
+      className="absolute overflow-hidden rounded-[10px] cursor-pointer"
       style={{
         // 每张图片本身占屏幕的2/3大小
         width: '66.67vw',
@@ -102,15 +102,17 @@ const ImagePlaceholder: React.FC<{
               style={{
                 opacity: isTop ? 0.9 : 0.75,
                 transform: isHovered ? 'scale(1.02)' : 'scale(1)',
-                transition: 'opacity 0.3s ease, transform 0.3s ease',
-                // 保持比例并完整展示，始终居中
+                transition: 'opacity 0.3s ease, transform 0.3s ease, filter 0.3s ease',
+                // 保持比例并居中平铺，填充容器
                 width: '100%',
                 height: '100%',
-                objectFit: 'contain',
+                objectFit: 'cover',
                 objectPosition: 'center center',
                 display: 'block',
-                borderRadius: '0.5rem',
-                backgroundColor: 'transparent'
+                borderRadius: '10px',
+                backgroundColor: theme === 'dark' ? 'rgba(0, 0, 0, 0.8)' : 'rgba(20, 20, 20, 0.8)',
+                // 非顶层图片添加黑度效果
+                filter: isTop ? 'none' : 'brightness(50%)'
               }}
               onError={(e) => {
                 // 如果图片加载失败，显示占位符
@@ -144,34 +146,6 @@ const ImagePlaceholder: React.FC<{
           </div>
         </div>
         
-        {/* 悬停时的覆盖层 */}
-        <div 
-          className="absolute inset-0 transition-all duration-300 flex items-center justify-center"
-          style={{
-            backgroundColor: isHovered 
-              ? (theme === 'dark' ? 'rgba(0, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)')
-              : 'rgba(0, 0, 0, 0)'
-          }}
-        >
-          <div 
-            className="transition-all duration-300"
-            style={{ 
-              opacity: isHovered ? 1 : 0,
-              transform: isHovered ? 'translateY(0)' : 'translateY(10px)'
-            }}
-          >
-            <div 
-              className="text-sm font-medium text-center px-3 py-1 rounded"
-              style={{
-                color: theme === 'dark' ? '#00FFFF' : '#0066CC',
-                backgroundColor: theme === 'dark' ? 'rgba(0, 255, 255, 0.1)' : 'rgba(0, 102, 204, 0.1)',
-                border: `1px solid ${theme === 'dark' ? 'rgba(0, 255, 255, 0.3)' : 'rgba(0, 102, 204, 0.3)'}`
-              }}
-            >
-              点击查看
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   )
