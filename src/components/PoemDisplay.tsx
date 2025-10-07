@@ -38,33 +38,16 @@ const PoemDisplay: React.FC<PoemDisplayProps> = ({ poem, isVisible }) => {
         
         {/* 诗词内容 */}
         <div className="space-y-6">
-          {poem.content.map((line, index) => (
-            <p 
-              key={index}
-              className="text-lg md:text-xl text-gray-300 leading-relaxed animate-fade-in"
-              style={{ animationDelay: `${index * 0.2}s` }}
-            >
-              {line}
-            </p>
-          ))}
+          <p className="text-lg md:text-xl text-gray-300 leading-relaxed">
+            {poem.poem}
+          </p>
         </div>
         
-        {/* 翻译 */}
-        {poem.translation && (
-          <div className="mt-12 p-6 bg-cyan-500/10 rounded-lg border border-cyan-500/20">
-            <h3 className="text-lg font-semibold text-cyan-300 mb-4">译文</h3>
-            <p className="text-gray-300 leading-relaxed">
-              {poem.translation}
-            </p>
-          </div>
-        )}
-        
-        {/* 赏析 */}
-        {poem.analysis && (
-          <div className="mt-8 p-6 bg-cyan-500/5 rounded-lg border border-cyan-500/10">
-            <h3 className="text-lg font-semibold text-cyan-300 mb-4">赏析</h3>
-            <p className="text-gray-300 leading-relaxed">
-              {poem.analysis}
+        {/* 来源 */}
+        {poem.source && (
+          <div className="mt-8 p-4 bg-cyan-500/10 rounded-lg border border-cyan-500/20">
+            <p className="text-sm text-cyan-300">
+              来源：{poem.source}
             </p>
           </div>
         )}
