@@ -71,13 +71,14 @@ const ImagePlaceholder: React.FC<{
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* 图片容器 */}
+      {/* 图片容器 - 简化结构，确保居中 */}
       <div
-        className="w-full h-full relative"
+        className="w-full h-full relative flex items-center justify-center"
         style={{
           // 黑灰色填充背景，作为留边区域
           backgroundColor: theme === 'dark' ? '#0a0a0a' : '#111111',
-          border: `1px solid ${theme === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)'}`,
+          border: `6px solid rgba(255, 255, 255, 0.5)`,
+          borderRadius: '6px',
           // 悬停时的阴影效果
           boxShadow: isHovered 
             ? (theme === 'dark'
@@ -91,26 +92,25 @@ const ImagePlaceholder: React.FC<{
           transition: 'box-shadow 0.3s ease, transform 0.3s ease'
         }}
       >
-        {/* 图片内容 */}
-        <div className="absolute inset-0 flex items-center justify-center">
           {supabaseUrl ? (
             // 渲染图片
             <img 
               src={supabaseUrl}
               alt={`照片 ${placeholder.id}`}
-              className="w-full h-full object-cover"
               style={{
                 opacity: isTop ? 0.9 : 0.75,
-                transform: isHovered ? 'scale(1.02)' : 'scale(1)',
+                transform: isHovered ? 'scale(1.02)' : 'scale(1)', // 悬停时轻微放大，正常时保持原始大小
                 transition: 'opacity 0.3s ease, transform 0.3s ease, filter 0.3s ease',
-                // 保持比例并居中平铺，填充容器
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
+                // 保持比例并完整展示，始终居中
+                maxWidth: '100%',
+                maxHeight: '100%',
+                width: 'auto',
+                height: 'auto',
+                objectFit: 'contain',
                 objectPosition: 'center center',
                 display: 'block',
-                borderRadius: '10px',
-                backgroundColor: theme === 'dark' ? 'rgba(0, 0, 0, 0.8)' : 'rgba(20, 20, 20, 0.8)',
+                borderRadius: '6px',
+                backgroundColor: 'transparent',
                 // 非顶层图片添加黑度效果
                 filter: isTop ? 'none' : 'brightness(50%)'
               }}
@@ -122,30 +122,28 @@ const ImagePlaceholder: React.FC<{
                 if (fallback) fallback.style.display = 'flex';
               }}
             />
-          ) : null}
-          
-          {/* 占位符内容（当没有图片或图片加载失败时显示） */}
-          <div 
-            className="absolute inset-0 flex items-center justify-center text-center"
-            style={{ display: supabaseUrl ? 'none' : 'flex' }}
-          >
+          ) : (
+            /* 占位符内容（当没有图片时显示） */
             <div 
-              className="text-sm font-mono font-medium transition-all duration-300"
-              style={{
-                color: theme === 'dark' ? 'rgba(255, 120, 120, 0.9)' : '#cc0000',
-                backgroundColor: theme === 'dark' ? 'rgba(255, 120, 120, 0.08)' : 'rgba(204, 0, 0, 0.06)',
-                border: `1px solid ${theme === 'dark' ? 'rgba(255, 120, 120, 0.4)' : 'rgba(204, 0, 0, 0.35)'}`,
-                padding: '0.5rem 0.75rem',
-                borderRadius: '0.5rem',
-                opacity: isTop ? 0.95 : 0.7,
-                transform: isHovered ? 'scale(1.02)' : 'scale(1)'
-              }}
+              className="flex items-center justify-center text-center"
+              style={{ display: supabaseUrl ? 'none' : 'flex' }}
             >
-              url error
+              <div 
+                className="text-sm font-mono font-medium transition-all duration-300"
+                style={{
+                  color: theme === 'dark' ? 'rgba(255, 120, 120, 0.9)' : '#cc0000',
+                  backgroundColor: theme === 'dark' ? 'rgba(255, 120, 120, 0.08)' : 'rgba(204, 0, 0, 0.06)',
+                  border: `1px solid ${theme === 'dark' ? 'rgba(255, 120, 120, 0.4)' : 'rgba(204, 0, 0, 0.35)'}`,
+                  padding: '0.5rem 0.75rem',
+                  borderRadius: '0.5rem',
+                  opacity: isTop ? 0.95 : 0.7,
+                  transform: isHovered ? 'scale(1.02)' : 'scale(1)'
+                }}
+              >
+                url error
+              </div>
             </div>
-          </div>
-        </div>
-        
+          )}
       </div>
     </div>
   )
