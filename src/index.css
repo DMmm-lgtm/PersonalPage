@@ -1049,3 +1049,35 @@ button:focus-visible {
   80%  { transform: translateY(0) scale(1); }
   100% { transform: translateY(calc(var(--jerboa-bob-amp, 6px) * -0.5)) scale(1.01); }
 }
+
+/* 四芒星发光动画 */
+@keyframes starGlow {
+  0% {
+    filter: drop-shadow(0 0 10px #00FFFF);
+  }
+  100% {
+    filter: drop-shadow(0 0 30px #00FFFF);
+  }
+}
+
+/* 诗句淡入动画 */
+@keyframes poemFadeIn {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* 加载旋转动画 */
+@keyframes spin {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}

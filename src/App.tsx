@@ -1,9 +1,30 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
+// import { PoemProvider } from './contexts/PoemContext'
 import ThemeToggle from './components/ThemeToggle'
 import HeroText from './components/HeroText'
 import LeftGallery from './components/LeftGallery'
 import RightContent from './components/RightContent'
+import AITest from './components/AITest'
+// import StarButton from './components/StarButton'
+// import PoemDisplay from './components/PoemDisplay'
+
+// 中间页面内容组件 - 完全简化，只显示HeroText
+const MiddlePageContent: React.FC<{ onHeroPhaseChange: (phase: 'waiting' | 'typing' | 'holding' | 'deleting' | 'complete') => void }> = ({ onHeroPhaseChange }) => {
+  return (
+    <div style={{
+      position: 'relative',
+      width: '100%',
+      height: '100%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 10
+    }}>
+      <HeroText onPhaseChange={onHeroPhaseChange} />
+    </div>
+  )
+}
 
 // 主应用内容组件
 const AppContent: React.FC = () => {
@@ -788,17 +809,7 @@ const AppContent: React.FC = () => {
             <LeftGallery />
           </div>
           <div style={{ width: '100vw', height: '100vh', scrollSnapAlign: 'start' }}>
-            <div style={{
-              position: 'relative',
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 10
-            }}>
-              <HeroText onPhaseChange={handleHeroPhaseChange} />
-            </div>
+            <MiddlePageContent onHeroPhaseChange={handleHeroPhaseChange} />
           </div>
           <div style={{ width: '100vw', height: '100vh', scrollSnapAlign: 'start' }}>
             <RightContent />
@@ -810,11 +821,14 @@ const AppContent: React.FC = () => {
       <div style={{ position: 'fixed', top: 0, right: 0, zIndex: 100 }}>
         <ThemeToggle />
       </div>
+      
+      {/* AI测试组件 - 右上角 */}
+      <AITest />
     </div>
   )
 }
 
-// 主App组件，包装ThemeProvider
+// 主App组件，只包装ThemeProvider
 function App() {
   return (
     <ThemeProvider>
