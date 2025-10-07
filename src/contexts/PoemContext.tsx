@@ -1,5 +1,7 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react'
-import { searchPoem, PoemSearchResponse } from '../lib/aiService'
+import React, { createContext, useContext, useState } from 'react'
+import type { ReactNode } from 'react'
+import { searchPoem } from '../lib/aiService'
+import type { PoemSearchResponse } from '../lib/aiService'
 
 interface PoemState {
   currentPoem: PoemSearchResponse | null
@@ -10,16 +12,17 @@ interface PoemState {
 
 interface PoemContextType {
   poemState: PoemState
-  searchPoem: () => Promise<void>
-  clearPoem: () => void
-  retrySearch: () => void
+  searchPoem: (query: string) => Promise<void>
+  showPoem: () => void
+  hidePoem: () => void
+  clearError: () => void
 }
 
 const PoemContext = createContext<PoemContextType | undefined>(undefined)
 
 export const usePoem = () => {
   const context = useContext(PoemContext)
-  if (!context) {
+  if (context === undefined) {
     throw new Error('usePoem must be used within a PoemProvider')
   }
   return context
@@ -37,56 +40,61 @@ export const PoemProvider: React.FC<PoemProviderProps> = ({ children }) => {
     isVisible: false
   })
 
-  const handleSearchPoem = async () => {
-    console.log('开始搜索诗句...')
+  const handleSearchPoem = async (query: string) => {
     setPoemState(prev => ({
       ...prev,
       isLoading: true,
-      error: null,
-      isVisible: false
+      error: null
     }))
 
     try {
-      const result = await searchPoem('推荐一句优美的诗句')
-      console.log('搜索成功:', result)
+      const poem = await searchPoem(query)
       setPoemState(prev => ({
         ...prev,
-        currentPoem: result,
+        currentPoem: poem,
         isLoading: false,
         isVisible: true
       }))
     } catch (error) {
-      console.error('搜索失败:', error)
       setPoemState(prev => ({
         ...prev,
-        isLoading: false,
-        error: error instanceof Error ? error.message : '搜索失败'
+        error: error instanceof Error ? error.message : '搜索诗词时发生错误',
+        isLoading: false
       }))
     }
   }
 
-  const clearPoem = () => {
+  const showPoem = () => {
     setPoemState(prev => ({
       ...prev,
-      currentPoem: null,
-      isVisible: false,
+      isVisible: true
+    }))
+  }
+
+  const hidePoem = () => {
+    setPoemState(prev => ({
+      ...prev,
+      isVisible: false
+    }))
+  }
+
+  const clearError = () => {
+    setPoemState(prev => ({
+      ...prev,
       error: null
     }))
   }
 
-  const retrySearch = () => {
-    handleSearchPoem()
+  const value: PoemContextType = {
+    poemState,
+    searchPoem: handleSearchPoem,
+    showPoem,
+    hidePoem,
+    clearError
   }
 
   return (
-    <PoemContext.Provider
-      value={{
-        poemState,
-        searchPoem: handleSearchPoem,
-        clearPoem,
-        retrySearch
-      }}
-    >
+    <PoemContext.Provider value={value}>
       {children}
     </PoemContext.Provider>
   )
